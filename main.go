@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -9,19 +10,41 @@ import (
 	"sync"
 )
 
-const (
-	chunkSize   = 4096 // Adjust this based on your needs
-	concurrency = 3    // Number of goroutines to run in parallel for writing
-)
+type Config struct {
+	ChunkSize int    `json:"chunkSize"`
+	Workers   int    `json:"workers"`
+	FileName  string `json:"fileName"`
+}
 
 func main() {
+	config := Config{
+		ChunkSize: 4096,
+		Workers:   3,
+		FileName:  "primary.log",
+	}
+
+	file, err := os.Open("config.json")
+	if err != nil {
+		fmt.Println("Configuration file not found, using default values.")
+	} else {
+		// Decode the JSON data into a Config struct
+		decoder := json.NewDecoder(file)
+		err = decoder.Decode(&config)
+		if err != nil {
+			fmt.Println("Error decoding configuration file:", err)
+			return
+		}
+	}
+	defer file.Close()
+
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
 	availableMemory := m.Sys - m.HeapReleased
 	fmt.Printf("Available system memory: %v bytes\n", availableMemory)
 
-	fileInfo, err := os.Stat("primary.log")
+	filePath := fmt.Sprintf("log-files/%s", config.FileName)
+	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,14 +54,14 @@ func main() {
 		fmt.Print("Good to Open")
 		//Open the entire file in one go and work on it
 	} else {
-		file, err := os.Open("primary.log")
+		file, err := os.Open(filePath)
 		if err != nil {
 			fmt.Println("Error opening file:", err)
 			return
 		}
 		defer file.Close()
 		// Read the file in chunks
-		buffer := make([]byte, chunkSize)
+		buffer := make([]byte, config.ChunkSize)
 		var chunkIndex int
 
 		for {
@@ -52,9 +75,9 @@ func main() {
 				break
 			}
 
-			fmt.Print(string(buffer[:n]))
-			// Write the chunk to the same output file
-			logChunk(buffer)
+			// fmt.Print(string(buffer[:n]))
+
+			logChunk(buffer, config.Workers)
 
 			chunkIndex++
 		}
@@ -63,15 +86,14 @@ func main() {
 	}
 }
 
-func logChunk(chunk []byte) {
+func logChunk(chunk []byte, workers int) {
 	var wg sync.WaitGroup
-	wg.Add(concurrency)
+	wg.Add(workers)
 
-	for i := 0; i < concurrency; i++ {
+	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
-
-			log.Println(string(chunk))
+			fmt.Println(string(chunk))
 		}()
 	}
 
