@@ -15,7 +15,6 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=builder /app/demo-log-generator .
-COPY --from=builder /app/primary.log .
 
 EXPOSE 30002
 
