@@ -29,11 +29,11 @@ func main() {
 	startTime = time.Now()
 
 	config := Config{
-		ChunkSize: 409,
-		Workers:   4,
+		ChunkSize: 3300000,
+		Workers:   8,
 		FileName:  "part_ab.log",
 		Split:     false,
-		Delay:     0,
+		Delay:     1,
 	}
 
 	file, err := os.Open("config.json")
@@ -80,20 +80,20 @@ func main() {
 		buffer := make([]byte, config.ChunkSize)
 		var chunkIndex int
 
-		done := make(chan struct{})
+		// done := make(chan struct{})
 
 		// Start a goroutine to periodically print the total amount of data written
-		go func() {
-			for {
-				select {
-				case <-done:
-					return
-				case <-time.After(time.Second):
-					throughput = float64(totalBytesWritten_instant) / float64(1024*1024*1024)
-					totalBytesWritten_instant = 0
-				}
-			}
-		}()
+		//go func() {
+		//	for {
+		//		select {
+		//		case <-done:
+		//			return
+		//		case <-time.After(time.Second):
+		//			throughput = float64(totalBytesWritten_instant) / float64(1024*1024*1024)
+		//			totalBytesWritten_instant = 0
+		//		}
+		//	}
+		//}()
 
 		for {
 			n, err := file.Read(buffer)
@@ -107,6 +107,7 @@ func main() {
 			}
 
 			// fmt.Print(string(buffer[:n]))
+			start := time.Now()
 			if config.Split {
 				totalBytesWritten += uint64(n)
 				totalBytesWritten_instant += uint64(n)
@@ -116,7 +117,9 @@ func main() {
 			}
 
 			logChunk(buffer, config.Workers, config.Split, config.Delay)
-
+			elapsedSeconds := float64(time.Since(start).Seconds())
+			throughput = (float64(totalBytesWritten_instant) / float64(1024*1024*1024)) / elapsedSeconds
+			totalBytesWritten_instant = 0
 			chunkIndex++
 		}
 	}
@@ -136,7 +139,7 @@ func logChunk(chunk []byte, workers int, split bool, delay int) {
 				if delay > 0 {
 					time.Sleep(time.Duration(delay) * time.Second)
 				}
-				fmt.Println(string(splitBytes[i]))
+				log.Println(string(splitBytes[i]))
 			}(i)
 		}
 	} else {
@@ -146,7 +149,7 @@ func logChunk(chunk []byte, workers int, split bool, delay int) {
 				if delay > 0 {
 					time.Sleep(time.Duration(delay) * time.Second)
 				}
-				fmt.Println(string(chunk))
+				log.Println(string(chunk))
 			}()
 		}
 	}
@@ -188,8 +191,8 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Simulate fetching performance metrics
 	metrics := map[string]interface{}{
 		"uptime":             time.Since(startTime).String(),
-		"bytes_written (GB)": float64(totalBytesWritten) / float64(1024*1024*1024),
-		"throughput (GB/s)":  throughput,
+		"bytes_written (MB)": float64(totalBytesWritten) / float64(1024*1024),
+		"throughput (MB/s)":  throughput*1024,
 	}
 
 	// Return metrics as JSON

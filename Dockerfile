@@ -16,6 +16,6 @@ WORKDIR /root/
 
 COPY --from=builder /app/demo-log-generator .
 
-EXPOSE 30002
+EXPOSE 8080
 
 ENTRYPOINT ["./demo-log-generator"]
