@@ -22,12 +22,9 @@ import (
 )
 
 const (
-	metricsUrl = "http://10.0.0.3:8445/metrics" // Metrics endpoint (add this to your server)
-	// logFile    = "prod_log_k8_logs.json"        // Source log file for templates
-
-	// Benchmark configuration
-	testDuration   = 300 * time.Second // Fixed duration test
-	reportInterval = 5 * time.Second   // How often to print stats
+	metricsUrl     = "http://10.0.0.3:8445/metrics"
+	testDuration   = 300 * time.Second
+	reportInterval = 5 * time.Second
 )
 
 var (
@@ -66,7 +63,6 @@ type LogEntry struct {
 	IstTimestamp  string `json:"ist_timestamp"`
 }
 
-// Metrics collector
 type BenchmarkMetrics struct {
 	totalRequests      int64
 	totalLogs          int64
@@ -76,7 +72,70 @@ type BenchmarkMetrics struct {
 	targetBytes        int64
 }
 
-// Manual Connection Pool
+// Pre-generated realistic values (initialized once)
+type FastTemplatePool struct {
+	JobIDs       []string
+	ExecutionIDs []string
+	ThreadIDs    []string
+	ProcessIDs   []int
+	PodSuffixes  []string
+	IPAddresses  []string
+}
+
+var templatePool *FastTemplatePool
+
+func initTemplatePool() {
+	templatePool = &FastTemplatePool{
+		JobIDs:       make([]string, 10000),
+		ExecutionIDs: make([]string, 5000),
+		ThreadIDs:    make([]string, 300),
+		ProcessIDs:   make([]int, 100),
+		PodSuffixes:  make([]string, 50),
+		IPAddresses:  make([]string, 20000),
+	}
+
+	// Pre-generate all values once
+	for i := range templatePool.JobIDs {
+		templatePool.JobIDs[i] = generateHex(24)
+	}
+	for i := range templatePool.ExecutionIDs {
+		templatePool.ExecutionIDs[i] = generateHex(8)
+	}
+	for i := range templatePool.ThreadIDs {
+		templatePool.ThreadIDs[i] = generateThreadID()
+	}
+	for i := range templatePool.ProcessIDs {
+		templatePool.ProcessIDs[i] = rand.Intn(5000) + 1
+	}
+	for i := range templatePool.PodSuffixes {
+		templatePool.PodSuffixes[i] = generateHex(10) + "-" + generateHex(5)
+	}
+	for i := range templatePool.IPAddresses {
+		templatePool.IPAddresses[i] = fmt.Sprintf("%d.%d.%d.%d",
+			rand.Intn(255)+1, rand.Intn(255), rand.Intn(255), rand.Intn(255))
+	}
+}
+
+func generateHex(length int) string {
+	const chars = "0123456789abcdef"
+	result := make([]byte, length)
+	for i := range result {
+		result[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(result)
+}
+
+func generateThreadID() string {
+	const chars = "0123456789abcdefghijklmnopqrstuvwxyz"
+	length := rand.Intn(4) + 3
+	result := make([]byte, length)
+	for i := range result {
+		result[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(result)
+}
+
+// Connection Pool (keeping your existing implementation)
 type Connection struct {
 	conn     net.Conn
 	lastUsed time.Time
@@ -119,7 +178,6 @@ func NewConnectionPool(targetURL string, maxConns int) (*ConnectionPool, error) 
 		maxConns:    maxConns,
 	}
 
-	// Pre-create connections
 	for i := 0; i < maxConns; i++ {
 		conn, err := pool.createConnection(i)
 		if err != nil {
@@ -141,7 +199,6 @@ func (p *ConnectionPool) createConnection(id int) (*Connection, error) {
 		return nil, err
 	}
 
-	// Set TCP keep-alive
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
 		tcpConn.SetKeepAlive(true)
 		tcpConn.SetKeepAlivePeriod(30 * time.Second)
@@ -164,7 +221,6 @@ func (p *ConnectionPool) Get() (*Connection, error) {
 		atomic.AddInt64(&p.reused, 1)
 		return conn, nil
 	default:
-		// No connections available, try to create a new one if under limit
 		p.mu.Lock()
 		defer p.mu.Unlock()
 
@@ -179,7 +235,6 @@ func (p *ConnectionPool) Get() (*Connection, error) {
 			return conn, nil
 		}
 
-		// Wait for a connection to become available
 		conn := <-p.available
 		conn.inUse = true
 		conn.lastUsed = time.Now()
@@ -192,9 +247,7 @@ func (p *ConnectionPool) Put(conn *Connection) {
 	conn.inUse = false
 	select {
 	case p.available <- conn:
-		// Connection returned to pool
 	default:
-		// Pool is full, close the connection
 		conn.conn.Close()
 	}
 }
@@ -210,7 +263,6 @@ func (p *ConnectionPool) Stats() (int64, int64) {
 	return atomic.LoadInt64(&p.created), atomic.LoadInt64(&p.reused)
 }
 
-// HTTP client using manual connection pool
 type PooledHTTPClient struct {
 	pool       *ConnectionPool
 	host       string
@@ -242,7 +294,6 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 	}
 	defer c.pool.Put(conn)
 
-	// Build HTTP request
 	request := fmt.Sprintf(
 		"POST %s HTTP/1.1\r\n"+
 			"Host: %s\r\n"+
@@ -252,19 +303,12 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 			"User-Agent: %s\r\n"+
 			"Connection: keep-alive\r\n"+
 			"\r\n",
-		path,
-		c.host,
-		len(data),
-		c.authHeader,
-		c.userAgent,
+		path, c.host, len(data), c.authHeader, c.userAgent,
 	)
 
-	// Send request
 	totalBytes := int64(len(request) + len(data))
 
-	// Set write deadline
 	conn.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-
 	_, err = conn.conn.Write([]byte(request))
 	if err != nil {
 		return false, totalBytes, err
@@ -275,18 +319,14 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 		return false, totalBytes, err
 	}
 
-	// Read response
 	conn.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-
 	reader := bufio.NewReader(conn.conn)
 
-	// Read status line
 	statusLine, isPrefix, err := reader.ReadLine()
 	if err != nil {
 		return false, totalBytes, err
 	}
 
-	// Handle long status lines (unlikely but defensive)
 	for isPrefix {
 		var moreLine []byte
 		moreLine, isPrefix, err = reader.ReadLine()
@@ -296,16 +336,13 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 		statusLine = append(statusLine, moreLine...)
 	}
 
-	// Parse status code
 	parts := strings.Split(string(statusLine), " ")
 	if len(parts) < 2 {
 		return false, totalBytes, fmt.Errorf("invalid status line: %s", string(statusLine))
 	}
 
-	statusCode := parts[1]
-	success := statusCode == "200"
+	success := parts[1] == "200"
 
-	// Read headers to find content length
 	contentLength := 0
 	for {
 		line, isPrefix, err := reader.ReadLine()
@@ -313,7 +350,6 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 			return false, totalBytes, err
 		}
 
-		// Handle long header lines
 		for isPrefix {
 			var moreLine []byte
 			moreLine, isPrefix, err = reader.ReadLine()
@@ -324,7 +360,6 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 		}
 
 		if len(line) == 0 {
-			// Empty line indicates end of headers
 			break
 		}
 
@@ -335,7 +370,6 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 		}
 	}
 
-	// Read body (we need to consume it to keep connection alive)
 	if contentLength > 0 {
 		body := make([]byte, contentLength)
 		_, err = io.ReadFull(reader, body)
@@ -355,10 +389,117 @@ func (c *PooledHTTPClient) Stats() (int64, int64) {
 	return c.pool.Stats()
 }
 
+// FAST log generation - minimal overhead, maximum throughput
+func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
+	batch := make([]LogEntry, size)
+	batchUUID := uuid.New().String()
+	baseTime := time.Now()
+
+	for i := 0; i < size; i++ {
+		template := templateLogs[rand.Intn(len(templateLogs))]
+
+		// Fast random selection from pre-generated pools
+		jobID := templatePool.JobIDs[rand.Intn(len(templatePool.JobIDs))]
+		execID := templatePool.ExecutionIDs[rand.Intn(len(templatePool.ExecutionIDs))]
+		threadID := templatePool.ThreadIDs[rand.Intn(len(templatePool.ThreadIDs))]
+		processID := templatePool.ProcessIDs[rand.Intn(len(templatePool.ProcessIDs))]
+		podSuffix := templatePool.PodSuffixes[rand.Intn(len(templatePool.PodSuffixes))]
+		ipAddr := templatePool.IPAddresses[rand.Intn(len(templatePool.IPAddresses))]
+
+		// Fast time variation
+		logTime := baseTime.Add(time.Duration(i) * time.Millisecond)
+		timestamp := logTime.Unix()
+		istTimestamp := logTime.Format("02/01/2006, 15:04:05")
+
+		// Fast message generation - simple string operations, no regex
+		message := fastReplaceMessage(template.Message, jobID, execID, threadID, processID, ipAddr, logTime)
+
+		// Fast pod name generation
+		podName := generateFastPodName(template.PodName, podSuffix)
+
+		batch[i] = LogEntry{
+			ClusterName:   template.ClusterName,
+			ContainerName: template.ContainerName,
+			CtrlbIsource:  template.CtrlbIsource,
+			CtrlbLogLevel: template.CtrlbLogLevel,
+			Message:       message + " [batch:" + batchUUID + strconv.Itoa(i) + "]",
+			NamespaceName: template.NamespaceName,
+			PluginSource:  template.PluginSource,
+			PodName:       podName,
+			Stream:        template.Stream,
+			Timestamp:     timestamp * 1000000,
+			IstTimestamp:  istTimestamp,
+		}
+	}
+
+	return batch
+}
+
+// Fast string replacement without regex - just replace known patterns
+func fastReplaceMessage(msg, jobID, execID, threadID string, processID int, ipAddr string, logTime time.Time) string {
+	// Replace common patterns with simple string operations
+	if strings.Contains(msg, "jid=") {
+		// Find and replace job IDs
+		if idx := strings.Index(msg, "jid="); idx != -1 {
+			start := idx + 4
+			end := start
+			for end < len(msg) && (msg[end] != ' ' && msg[end] != ']' && msg[end] != ',') {
+				end++
+			}
+			if end > start {
+				msg = msg[:start] + jobID + msg[end:]
+			}
+		}
+	}
+
+	if strings.Contains(msg, "tid=") {
+		if idx := strings.Index(msg, "tid="); idx != -1 {
+			start := idx + 4
+			end := start
+			for end < len(msg) && (msg[end] != ' ' && msg[end] != ']' && msg[end] != ',') {
+				end++
+			}
+			if end > start {
+				msg = msg[:start] + threadID + msg[end:]
+			}
+		}
+	}
+
+	// Replace timestamps
+	if strings.Contains(msg, "2025-03-08T") {
+		newTime := logTime.Format("2006-01-02T15:04:05.000Z")
+		msg = strings.Replace(msg, "2025-03-08T20:57:48.591Z", newTime, 1)
+		msg = strings.Replace(msg, "2025-03-08T20:57:48.497Z", newTime, 1)
+		msg = strings.Replace(msg, "2025-03-08T20:57:48.589Z", newTime, 1)
+	}
+
+	// Replace IP addresses only where we know they exist
+	if strings.Contains(msg, " for ") && strings.Contains(msg, ".253 ") {
+		msg = strings.Replace(msg, "20.197.75.253", ipAddr, 1)
+	}
+
+	return msg
+}
+
+func generateFastPodName(template, suffix string) string {
+	if strings.Contains(template, "-") {
+		lastDash := strings.LastIndex(template, "-")
+		if lastDash > 0 {
+			secondLastDash := strings.LastIndex(template[:lastDash], "-")
+			if secondLastDash > 0 {
+				return template[:secondLastDash] + "-" + suffix
+			}
+		}
+	}
+	return template + "-" + suffix
+}
+
 func main() {
 	flag.Parse()
 
-	// Read template logs
+	// Initialize fast template pool once
+	initTemplatePool()
+
 	templateLogs, err := readLogsFromFile(logFile)
 	if err != nil {
 		fmt.Printf("Error reading logs: %v\n", err)
@@ -371,17 +512,11 @@ func main() {
 	}
 
 	fmt.Printf("Loaded %d template logs\n", len(templateLogs))
-
-	// For generating random log data
 	rand.Seed(time.Now().UnixNano())
 
-	// Metrics
 	metrics := &BenchmarkMetrics{}
-
-	// Create stop channel for graceful shutdown
 	stopCh := make(chan struct{})
 
-	// Handle Ctrl+C
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	go func() {
@@ -390,9 +525,7 @@ func main() {
 		close(stopCh)
 	}()
 
-	// Create pooled HTTP client
-	maxConnections := concurrency // One connection per worker initially
-
+	maxConnections := concurrency
 	client, err := NewPooledHTTPClient(baseURL, maxConnections)
 	if err != nil {
 		fmt.Printf("Error creating HTTP client: %v\n", err)
@@ -400,25 +533,21 @@ func main() {
 	}
 	defer client.Close()
 
-	// Start the workers
 	var wg sync.WaitGroup
 	startTime := time.Now()
 
-	// Set termination criteria
 	var endTime time.Time
 	if useVolumeTarget && targetVolumeGB > 0 {
-		metrics.targetBytes = int64(targetVolumeGB * 1024 * 1024 * 1024) // Convert GB to bytes
-		endTime = startTime.Add(24 * time.Hour)                          // Safety net - max 24 hours
+		metrics.targetBytes = int64(targetVolumeGB * 1024 * 1024 * 1024)
+		endTime = startTime.Add(24 * time.Hour)
 		fmt.Printf("Target: %.2f GB (%.0f bytes)\n", targetVolumeGB, float64(metrics.targetBytes))
 	} else {
 		endTime = startTime.Add(testDuration)
 		fmt.Printf("Duration-based test: %v\n", testDuration)
 	}
 
-	// Start the metrics reporter
 	go reportMetrics(metrics, client, startTime, stopCh)
 
-	// Start the workers
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 		go func(workerID int) {
@@ -427,10 +556,7 @@ func main() {
 		}(i)
 	}
 
-	// Wait for completion
 	wg.Wait()
-
-	// Final report
 	elapsed := time.Since(startTime).Seconds()
 	printMetrics(metrics, client, elapsed)
 }
@@ -444,31 +570,23 @@ func runWorker(client *PooledHTTPClient, templateLogs []LogEntry, metrics *Bench
 			return
 		default:
 			if useVolumeTarget && targetVolumeGB > 0 {
-				// Volume-based termination
 				if atomic.LoadInt64(&metrics.totalBytes) >= metrics.targetBytes {
 					return
 				}
-				// Also check time safety net
 				if time.Now().After(endTime) {
-					fmt.Printf("Worker %d: Safety timeout reached\n", workerID)
 					return
 				}
 			} else {
-				// Time-based termination (original behavior)
 				if time.Now().After(endTime) {
 					return
 				}
 			}
 
-			// Generate a batch of logs by randomly selecting and modifying template logs
-			batch := generateLogBatch(templateLogs, batchSize)
-
-			// Send the batch
+			// Use fast generation
+			batch := generateFastRealisticBatch(templateLogs, batchSize)
 			success, bytesProcessed := sendLogBatch(client, batch, workerID)
 
-			// Update metrics
 			atomic.AddInt64(&metrics.totalRequests, 1)
-
 			if success {
 				atomic.AddInt64(&metrics.successfulRequests, 1)
 				atomic.AddInt64(&metrics.totalLogs, int64(batchSize))
@@ -478,35 +596,6 @@ func runWorker(client *PooledHTTPClient, templateLogs []LogEntry, metrics *Bench
 			}
 		}
 	}
-}
-
-func generateLogBatch(templateLogs []LogEntry, size int) []LogEntry {
-	batch := make([]LogEntry, size)
-
-	uuid := uuid.New().String()
-	for i := 0; i < size; i++ {
-		// Pick a random template log
-		template := templateLogs[rand.Intn(len(templateLogs))]
-
-		// Create a modified copy with unique timestamp and some random fields
-		log := LogEntry{
-			ClusterName:   template.ClusterName + ":: [" + orgId + "]",
-			ContainerName: template.ContainerName + "-" + strconv.Itoa(rand.Intn(1000)),
-			CtrlbIsource:  template.CtrlbIsource,
-			CtrlbLogLevel: template.CtrlbLogLevel,
-			Message:       template.Message + " - " + " [benchmark:" + strconv.FormatInt(time.Now().UnixNano(), 10) + "::" + strconv.Itoa(i) + "]" + " IDER: " + uuid,
-			NamespaceName: template.NamespaceName,
-			PluginSource:  template.PluginSource,
-			PodName:       template.PodName + "-" + strconv.Itoa(rand.Intn(100)),
-			Stream:        template.Stream + ":: [" + streamName + "]",
-			Timestamp:     time.Now().Unix(),
-			IstTimestamp:  time.Now().Format(time.RFC3339),
-		}
-
-		batch[i] = log
-	}
-
-	return batch
 }
 
 func sendLogBatch(client *PooledHTTPClient, logs []LogEntry, workerID int) (bool, int64) {
@@ -545,28 +634,22 @@ func reportMetrics(metrics *BenchmarkMetrics, client *PooledHTTPClient, startTim
 		case <-stopCh:
 			return
 		case t := <-ticker.C:
-			// Calculate interval metrics
 			intervalElapsed := t.Sub(lastTime).Seconds()
 			totalBytes := atomic.LoadInt64(&metrics.totalBytes)
 			totalLogs := atomic.LoadInt64(&metrics.totalLogs)
 			intervalBytes := totalBytes - lastBytes
 			intervalLogs := totalLogs - lastLogs
 
-			// Calculate rates
 			mbPerSecInterval := float64(intervalBytes) / intervalElapsed / (1024 * 1024)
 			logsPerSecInterval := float64(intervalLogs) / intervalElapsed
 
-			// Print current rate
-			fmt.Printf("[%s] Current Rate: %.2f MB/s | Instantaneous log rate: %.2f MB/s | ",
-				t.Format("15:04:05"),
-				mbPerSecInterval, logsPerSecInterval)
+			fmt.Printf("[%s] Current Rate: %.2f MB/s | %.0f logs/s | ",
+				t.Format("15:04:05"), mbPerSecInterval, logsPerSecInterval)
 
-			// Update for next interval
 			lastBytes = totalBytes
 			lastLogs = totalLogs
 			lastTime = t
 
-			// Also print cumulative metrics
 			printMetrics(metrics, client, time.Since(startTime).Seconds())
 		}
 	}
@@ -582,11 +665,9 @@ func printMetrics(metrics *BenchmarkMetrics, client *PooledHTTPClient, elapsedSe
 	mbPerSec := mbProcessed / elapsedSeconds
 	logsPerSec := float64(totalLogs) / elapsedSeconds
 
-	// Calculate per-core metrics (estimation)
 	numCores := runtime.NumCPU()
 	mbPerSecPerCore := mbPerSec / float64(numCores)
 
-	// Get connection pool stats
 	created, reused := client.Stats()
 
 	progressStr := ""
@@ -606,16 +687,15 @@ func printMetrics(metrics *BenchmarkMetrics, client *PooledHTTPClient, elapsedSe
 		created,
 		reused,
 		progressStr)
+
 }
 
 func readLogsFromFile(filePath string) ([]LogEntry, error) {
-	// Read file content
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
-	// Parse JSON
 	var logs []LogEntry
 	err = json.Unmarshal(data, &logs)
 	if err != nil {
