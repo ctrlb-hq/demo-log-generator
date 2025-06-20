@@ -18,6 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
 )
 
@@ -61,6 +62,9 @@ type LogEntry struct {
 	Stream        string `json:"stream"`
 	Timestamp     int64  `json:"timestamp"`
 	IstTimestamp  string `json:"ist_timestamp"`
+	SpanId        string `json:"span_id"`
+	TraceId       string `json:"trace_id"`
+	Bytes         int    `json:"bytes"`
 }
 
 type BenchmarkMetrics struct {
@@ -80,6 +84,7 @@ type FastTemplatePool struct {
 	ProcessIDs   []int
 	PodSuffixes  []string
 	IPAddresses  []string
+	ResourceURIs []string
 }
 
 var templatePool *FastTemplatePool
@@ -92,6 +97,7 @@ func initTemplatePool() {
 		ProcessIDs:   make([]int, 100),
 		PodSuffixes:  make([]string, 50),
 		IPAddresses:  make([]string, 20000),
+		ResourceURIs: make([]string, 2000),
 	}
 
 	// Pre-generate all values once
@@ -113,6 +119,32 @@ func initTemplatePool() {
 	for i := range templatePool.IPAddresses {
 		templatePool.IPAddresses[i] = fmt.Sprintf("%d.%d.%d.%d",
 			rand.Intn(255)+1, rand.Intn(255), rand.Intn(255), rand.Intn(255))
+	}
+	for i := range templatePool.ResourceURIs {
+		templatePool.ResourceURIs[i] = generateRealisticURI()
+	}
+}
+
+func generateRealisticURI() string {
+	endpoints := []string{
+		"/api/v1/users", "/api/v1/orders", "/api/v1/products", "/api/v1/tracking",
+		"/api/v1/shipments", "/api/v1/customers", "/api/v2/orders", "/api/v2/tracking",
+		"/dashboard", "/login", "/admin", "/reports", "/health", "/metrics",
+		"/assets/js", "/assets/css", "/static/img",
+	}
+
+	base := endpoints[rand.Intn(len(endpoints))]
+
+	// Add some variation
+	switch rand.Intn(4) {
+	case 0:
+		return base
+	case 1:
+		return base + "/" + strconv.Itoa(rand.Intn(10000))
+	case 2:
+		return base + "?id=" + strconv.Itoa(rand.Intn(1000))
+	default:
+		return base + "/" + gofakeit.Word()
 	}
 }
 
@@ -394,7 +426,7 @@ func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
 	batch := make([]LogEntry, size)
 	batchUUID := uuid.New().String()
 	baseTime := time.Now()
-
+	traceID := GenerateTraceID()
 	for i := 0; i < size; i++ {
 		template := templateLogs[rand.Intn(len(templateLogs))]
 
@@ -413,6 +445,15 @@ func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
 
 		// Fast message generation - simple string operations, no regex
 		message := fastReplaceMessage(template.Message, jobID, execID, threadID, processID, ipAddr, logTime)
+		if i%4 == 0 {
+			traceID = GenerateTraceID()
+		}
+		// var message = ""
+		// if i%2 == 0 {
+		// 	message = NewApacheCommonLog()
+		// } else {
+		// 	message = NewApacheErrorLog()
+		// }
 
 		// Fast pod name generation
 		podName := generateFastPodName(template.PodName, podSuffix)
@@ -429,6 +470,9 @@ func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
 			Stream:        template.Stream,
 			Timestamp:     timestamp * 1000000,
 			IstTimestamp:  istTimestamp,
+			TraceId:       traceID,
+			SpanId:        GenerateSpanID(),
+			Bytes:         gofakeit.Number(0, 30000),
 		}
 	}
 
@@ -703,4 +747,75 @@ func readLogsFromFile(filePath string) ([]LogEntry, error) {
 	}
 
 	return logs, nil
+}
+
+const (
+	ApacheCommonLog = "%s - %s [%s] \"%s %s %s\" %d %d"
+	Apache          = "02/Jan/2006:15:04:05 -0700"
+	ApacheErrorLog  = "[%s] [%s:%s] [pid %d:tid %d] [client %s:%d] %s"
+	ApacheError     = "Mon Jan 02 15:04:05 2006"
+)
+
+// func RandResourceURI() string {
+// 	var uri string
+// 	num := gofakeit.Number(1, 4)
+// 	for i := 0; i < num; i++ {
+// 		uri += "/" + url.QueryEscape(gofakeit.BS())
+// 	}
+// 	uri = strings.ToLower(uri)
+// 	return uri
+// }
+
+func RandResourceURI() string {
+	return templatePool.ResourceURIs[rand.Intn(len(templatePool.ResourceURIs))]
+}
+
+// RandAuthUserID generates a random auth user id
+func RandAuthUserID() string {
+	candidates := []string{"-", strings.ToLower(gofakeit.Username())}
+	return candidates[rand.Intn(2)]
+}
+
+// RandHTTPVersion returns a random http version
+func RandHTTPVersion() string {
+	versions := []string{"HTTP/1.0", "HTTP/1.1", "HTTP/2.0"}
+	return versions[rand.Intn(3)]
+}
+
+func NewApacheCommonLog() string {
+	t := time.Now()
+	return fmt.Sprintf(
+		ApacheCommonLog,
+		gofakeit.IPv4Address(),
+		RandAuthUserID(),
+		t.Format(Apache),
+		gofakeit.HTTPMethod(),
+		RandResourceURI(),
+		RandHTTPVersion(),
+		gofakeit.StatusCode(),
+		gofakeit.Number(0, 30000),
+	)
+}
+
+func NewApacheErrorLog() string {
+	t := time.Now()
+	return fmt.Sprintf(
+		ApacheErrorLog,
+		t.Format(ApacheError),
+		gofakeit.Word(),
+		gofakeit.LogLevel("apache"),
+		gofakeit.Number(1, 10000),
+		gofakeit.Number(1, 10000),
+		gofakeit.IPv4Address(),
+		gofakeit.Number(1, 65535),
+		gofakeit.HackerPhrase(),
+	)
+}
+
+func GenerateTraceID() string {
+	return fmt.Sprintf("%016x%016x", rand.Uint64(), rand.Uint64())
+}
+
+func GenerateSpanID() string {
+	return fmt.Sprintf("%016x", rand.Uint64())
 }
