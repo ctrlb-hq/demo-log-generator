@@ -319,12 +319,132 @@ func NewPooledHTTPClient(targetURL string, maxConns int) (*PooledHTTPClient, err
 	}, nil
 }
 
+// func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
+// 	conn, err := c.pool.Get()
+// 	if err != nil {
+// 		return false, 0, err
+// 	}
+// 	defer c.pool.Put(conn)
+
+// 	request := fmt.Sprintf(
+// 		"POST %s HTTP/1.1\r\n"+
+// 			"Host: %s\r\n"+
+// 			"Content-Type: application/json\r\n"+
+// 			"Content-Length: %d\r\n"+
+// 			"Authorization: %s\r\n"+
+// 			"User-Agent: %s\r\n"+
+// 			"Connection: keep-alive\r\n"+
+// 			"\r\n",
+// 		path, c.host, len(data), c.authHeader, c.userAgent,
+// 	)
+
+// 	totalBytes := int64(len(request) + len(data))
+
+// 	conn.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+// 	_, err = conn.conn.Write([]byte(request))
+// 	if err != nil {
+// 		return false, totalBytes, err
+// 	}
+
+// 	_, err = conn.conn.Write(data)
+// 	if err != nil {
+// 		return false, totalBytes, err
+// 	}
+
+// 	conn.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+// 	reader := bufio.NewReader(conn.conn)
+
+// 	statusLine, isPrefix, err := reader.ReadLine()
+// 	if err != nil {
+// 		return false, totalBytes, err
+// 	}
+
+// 	for isPrefix {
+// 		var moreLine []byte
+// 		moreLine, isPrefix, err = reader.ReadLine()
+// 		if err != nil {
+// 			return false, totalBytes, err
+// 		}
+// 		statusLine = append(statusLine, moreLine...)
+// 	}
+
+// 	parts := strings.Split(string(statusLine), " ")
+// 	if len(parts) < 2 {
+// 		return false, totalBytes, fmt.Errorf("invalid status line: %s", string(statusLine))
+// 	}
+
+// 	success := parts[1] == "200"
+
+// 	contentLength := 0
+// 	for {
+// 		line, isPrefix, err := reader.ReadLine()
+// 		if err != nil {
+// 			return false, totalBytes, err
+// 		}
+
+// 		for isPrefix {
+// 			var moreLine []byte
+// 			moreLine, isPrefix, err = reader.ReadLine()
+// 			if err != nil {
+// 				return false, totalBytes, err
+// 			}
+// 			line = append(line, moreLine...)
+// 		}
+
+// 		if len(line) == 0 {
+// 			break
+// 		}
+
+// 		lineStr := string(line)
+// 		if strings.HasPrefix(strings.ToLower(lineStr), "content-length:") {
+// 			lengthStr := strings.TrimSpace(lineStr[15:])
+// 			contentLength, _ = strconv.Atoi(lengthStr)
+// 		}
+// 	}
+
+// 	if contentLength > 0 {
+// 		body := make([]byte, contentLength)
+// 		_, err = io.ReadFull(reader, body)
+// 		if err != nil {
+// 			return false, totalBytes, err
+// 		}
+// 	}
+
+// 	return success, totalBytes, nil
+// }
+
 func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 	conn, err := c.pool.Get()
 	if err != nil {
 		return false, 0, err
 	}
-	defer c.pool.Put(conn)
+
+	// Remove defer - we'll handle connection return manually
+	// defer c.pool.Put(conn)
+
+	// Test if connection is still alive before using it
+	conn.conn.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
+	one := make([]byte, 1)
+	_, err = conn.conn.Read(one)
+	conn.conn.SetReadDeadline(time.Time{}) // Reset deadline
+
+	if err == nil {
+		// If we can read data immediately, server probably closed connection
+		conn.conn.Close()
+		// Create new connection
+		conn, err = c.pool.createConnection(conn.id)
+		if err != nil {
+			return false, 0, fmt.Errorf("failed to create new connection: %w", err)
+		}
+	} else if netErr, ok := err.(net.Error); !ok || !netErr.Timeout() {
+		// If it's not a timeout error, connection is broken
+		conn.conn.Close()
+		conn, err = c.pool.createConnection(conn.id)
+		if err != nil {
+			return false, 0, fmt.Errorf("failed to create new connection: %w", err)
+		}
+	}
+	// If it's a timeout error, connection is probably good to use
 
 	request := fmt.Sprintf(
 		"POST %s HTTP/1.1\r\n"+
@@ -334,35 +454,40 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 			"Authorization: %s\r\n"+
 			"User-Agent: %s\r\n"+
 			"Connection: keep-alive\r\n"+
+			"Keep-Alive: timeout=300\r\n"+ // Tell server we want 5min timeout
 			"\r\n",
 		path, c.host, len(data), c.authHeader, c.userAgent,
 	)
 
 	totalBytes := int64(len(request) + len(data))
 
-	conn.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	conn.conn.SetWriteDeadline(time.Now().Add(30 * time.Second))
 	_, err = conn.conn.Write([]byte(request))
 	if err != nil {
-		return false, totalBytes, err
+		conn.conn.Close()
+		return false, totalBytes, fmt.Errorf("write request failed: %w", err)
 	}
 
 	_, err = conn.conn.Write(data)
 	if err != nil {
-		return false, totalBytes, err
+		conn.conn.Close()
+		return false, totalBytes, fmt.Errorf("write data failed: %w", err)
 	}
 
-	conn.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	conn.conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 	reader := bufio.NewReader(conn.conn)
 
 	statusLine, isPrefix, err := reader.ReadLine()
 	if err != nil {
-		return false, totalBytes, err
+		conn.conn.Close()
+		return false, totalBytes, fmt.Errorf("read status failed: %w", err)
 	}
 
 	for isPrefix {
 		var moreLine []byte
 		moreLine, isPrefix, err = reader.ReadLine()
 		if err != nil {
+			conn.conn.Close()
 			return false, totalBytes, err
 		}
 		statusLine = append(statusLine, moreLine...)
@@ -370,6 +495,7 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 
 	parts := strings.Split(string(statusLine), " ")
 	if len(parts) < 2 {
+		conn.conn.Close()
 		return false, totalBytes, fmt.Errorf("invalid status line: %s", string(statusLine))
 	}
 
@@ -379,6 +505,7 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 	for {
 		line, isPrefix, err := reader.ReadLine()
 		if err != nil {
+			conn.conn.Close()
 			return false, totalBytes, err
 		}
 
@@ -386,6 +513,7 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 			var moreLine []byte
 			moreLine, isPrefix, err = reader.ReadLine()
 			if err != nil {
+				conn.conn.Close()
 				return false, totalBytes, err
 			}
 			line = append(line, moreLine...)
@@ -406,8 +534,16 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 		body := make([]byte, contentLength)
 		_, err = io.ReadFull(reader, body)
 		if err != nil {
+			conn.conn.Close()
 			return false, totalBytes, err
 		}
+	}
+
+	// Only put connection back in pool if everything succeeded
+	if success && err == nil {
+		c.pool.Put(conn)
+	} else {
+		conn.conn.Close()
 	}
 
 	return success, totalBytes, nil
@@ -650,6 +786,7 @@ func sendLogBatch(client *PooledHTTPClient, logs []LogEntry, workerID int) (bool
 	}
 
 	path := fmt.Sprintf("/%s/%s/_json", orgId, streamName)
+	// path := "/"
 	success, bytesProcessed, err := client.Post(path, data)
 
 	if err != nil {
