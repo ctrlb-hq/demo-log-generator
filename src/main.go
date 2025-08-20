@@ -89,6 +89,15 @@ type FastTemplatePool struct {
 
 var templatePool *FastTemplatePool
 
+var beaconAdj = []string{
+	"objective", "determined", "focused", "stoic", "admiring", "practical", "serene", "eager",
+	"bold", "clever", "brave", "lucid", "inventive", "polished", "resolute", "spirited",
+}
+var beaconSurname = []string{
+	"wilbur", "turing", "curie", "lovelace", "babbage", "hopper", "einstein", "newton",
+	"feynman", "noether", "bohr", "tesla", "franklin", "pasteur", "maxwell", "darwin",
+}
+
 func initTemplatePool() {
 	templatePool = &FastTemplatePool{
 		JobIDs:       make([]string, 10000),
@@ -318,100 +327,6 @@ func NewPooledHTTPClient(targetURL string, maxConns int) (*PooledHTTPClient, err
 		authHeader: "Basic YWRtaW46YWRtaW4=",
 	}, nil
 }
-
-// func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
-// 	conn, err := c.pool.Get()
-// 	if err != nil {
-// 		return false, 0, err
-// 	}
-// 	defer c.pool.Put(conn)
-
-// 	request := fmt.Sprintf(
-// 		"POST %s HTTP/1.1\r\n"+
-// 			"Host: %s\r\n"+
-// 			"Content-Type: application/json\r\n"+
-// 			"Content-Length: %d\r\n"+
-// 			"Authorization: %s\r\n"+
-// 			"User-Agent: %s\r\n"+
-// 			"Connection: keep-alive\r\n"+
-// 			"\r\n",
-// 		path, c.host, len(data), c.authHeader, c.userAgent,
-// 	)
-
-// 	totalBytes := int64(len(request) + len(data))
-
-// 	conn.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-// 	_, err = conn.conn.Write([]byte(request))
-// 	if err != nil {
-// 		return false, totalBytes, err
-// 	}
-
-// 	_, err = conn.conn.Write(data)
-// 	if err != nil {
-// 		return false, totalBytes, err
-// 	}
-
-// 	conn.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
-// 	reader := bufio.NewReader(conn.conn)
-
-// 	statusLine, isPrefix, err := reader.ReadLine()
-// 	if err != nil {
-// 		return false, totalBytes, err
-// 	}
-
-// 	for isPrefix {
-// 		var moreLine []byte
-// 		moreLine, isPrefix, err = reader.ReadLine()
-// 		if err != nil {
-// 			return false, totalBytes, err
-// 		}
-// 		statusLine = append(statusLine, moreLine...)
-// 	}
-
-// 	parts := strings.Split(string(statusLine), " ")
-// 	if len(parts) < 2 {
-// 		return false, totalBytes, fmt.Errorf("invalid status line: %s", string(statusLine))
-// 	}
-
-// 	success := parts[1] == "200"
-
-// 	contentLength := 0
-// 	for {
-// 		line, isPrefix, err := reader.ReadLine()
-// 		if err != nil {
-// 			return false, totalBytes, err
-// 		}
-
-// 		for isPrefix {
-// 			var moreLine []byte
-// 			moreLine, isPrefix, err = reader.ReadLine()
-// 			if err != nil {
-// 				return false, totalBytes, err
-// 			}
-// 			line = append(line, moreLine...)
-// 		}
-
-// 		if len(line) == 0 {
-// 			break
-// 		}
-
-// 		lineStr := string(line)
-// 		if strings.HasPrefix(strings.ToLower(lineStr), "content-length:") {
-// 			lengthStr := strings.TrimSpace(lineStr[15:])
-// 			contentLength, _ = strconv.Atoi(lengthStr)
-// 		}
-// 	}
-
-// 	if contentLength > 0 {
-// 		body := make([]byte, contentLength)
-// 		_, err = io.ReadFull(reader, body)
-// 		if err != nil {
-// 			return false, totalBytes, err
-// 		}
-// 	}
-
-// 	return success, totalBytes, nil
-// }
 
 func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 	conn, err := c.pool.Get()
@@ -657,6 +572,11 @@ func fastReplaceMessage(msg, jobID, execID, threadID string, processID int, ipAd
 	if strings.Contains(msg, " for ") && strings.Contains(msg, ".253 ") {
 		msg = strings.Replace(msg, "20.197.75.253", ipAddr, 1)
 	}
+
+	if len(msg) > 0 && msg[len(msg)-1] != ' ' {
+		msg += " "
+	}
+	msg += "beacon_name=" + randDockerishName()
 
 	return msg
 }
@@ -955,4 +875,8 @@ func GenerateTraceID() string {
 
 func GenerateSpanID() string {
 	return fmt.Sprintf("%016x", rand.Uint64())
+}
+
+func randDockerishName() string {
+	return beaconAdj[rand.Intn(len(beaconAdj))] + "_" + beaconSurname[rand.Intn(len(beaconSurname))]
 }
