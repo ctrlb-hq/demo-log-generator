@@ -22,7 +22,6 @@ import (
 
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -72,6 +71,12 @@ type BenchmarkMetrics struct {
 	successfulRequests int64
 	failedRequests     int64
 	targetBytes        int64
+}
+
+type BatchRateLimiter struct {
+	mu       sync.Mutex
+	next     time.Time
+	interval time.Duration
 }
 
 type TemplateEntry struct {
@@ -636,16 +641,28 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	if batchSize <= 0 {
+		fmt.Println("batchSize must be > 0")
+		return
+	}
+	if concurrency <= 0 {
+		fmt.Println("concurrency must be > 0")
+		return
+	}
 	if logsPerMinute < 0 {
 		fmt.Println("logsPerMinute must be >= 0")
 		return
 	}
 
-	var logRateLimiter *rate.Limiter
+	var logRateLimiter *BatchRateLimiter
 	if logsPerMinute > 0 {
-		perSecond := rate.Limit(float64(logsPerMinute) / 60.0)
-		logRateLimiter = rate.NewLimiter(perSecond, batchSize)
-		fmt.Printf("Rate limit: ~%d log lines/minute across all workers (burst=%d lines)\n", logsPerMinute, batchSize)
+		if batchSize > logsPerMinute {
+			fmt.Printf("batchSize (%d) must be <= logsPerMinute (%d) when rate limiting is enabled\n", batchSize, logsPerMinute)
+			return
+		}
+		logRateLimiter = NewBatchRateLimiter(logsPerMinute, batchSize)
+		fmt.Printf("Rate limit: ~%d log lines/minute across all workers (%d logs every %s)\n",
+			logsPerMinute, batchSize, logRateLimiter.interval)
 	}
 
 	metrics := &BenchmarkMetrics{}
@@ -699,7 +716,7 @@ func main() {
 }
 
 func runWorker(ctx context.Context, client *PooledHTTPClient, selector *WeightedLogSelector,
-	logRateLimiter *rate.Limiter, metrics *BenchmarkMetrics,
+	logRateLimiter *BatchRateLimiter, metrics *BenchmarkMetrics,
 	stopCh chan struct{}, endTime time.Time, workerID int) {
 
 	for {
@@ -741,11 +758,48 @@ func runWorker(ctx context.Context, client *PooledHTTPClient, selector *Weighted
 	}
 }
 
-func waitLogBatchQuota(ctx context.Context, lim *rate.Limiter, n int) error {
+func NewBatchRateLimiter(logsPerMinute, batchSize int) *BatchRateLimiter {
+	interval := time.Duration(float64(time.Minute) * float64(batchSize) / float64(logsPerMinute))
+	if interval < time.Nanosecond {
+		interval = time.Nanosecond
+	}
+	return &BatchRateLimiter{
+		next:     time.Now(),
+		interval: interval,
+	}
+}
+
+func waitLogBatchQuota(ctx context.Context, lim *BatchRateLimiter, n int) error {
 	if lim == nil || n <= 0 {
 		return nil
 	}
-	return lim.WaitN(ctx, n)
+	return lim.Wait(ctx)
+}
+
+func (l *BatchRateLimiter) Wait(ctx context.Context) error {
+	l.mu.Lock()
+	now := time.Now()
+	scheduled := l.next
+	if scheduled.Before(now) {
+		scheduled = now
+	}
+	l.next = scheduled.Add(l.interval)
+	l.mu.Unlock()
+
+	delay := time.Until(scheduled)
+	if delay <= 0 {
+		return nil
+	}
+
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func sendLogBatch(client *PooledHTTPClient, logs []LogEntry, workerID int) (bool, int64) {
