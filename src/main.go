@@ -51,20 +51,9 @@ func init() {
 }
 
 type LogEntry struct {
-	ClusterName   string `json:"cluster_name"`
-	ContainerName string `json:"container_name"`
-	CtrlbIsource  string `json:"ctrlb_isource"`
-	CtrlbLogLevel string `json:"ctrlb_log_level"`
-	Message       string `json:"message"`
-	NamespaceName string `json:"namespace_name"`
-	PluginSource  string `json:"plugin_source"`
-	PodName       string `json:"pod_name"`
-	Stream        string `json:"stream"`
-	Timestamp     int64  `json:"timestamp"`
-	IstTimestamp  string `json:"ist_timestamp"`
-	SpanId        string `json:"span_id"`
-	TraceId       string `json:"trace_id"`
-	Bytes         int    `json:"bytes"`
+	Timestamp int64  `json:"_timestamp,omitempty"`
+	Log       string `json:"log,omitempty"`
+	Filename  string `json:"filename,omitempty"`
 }
 
 type BenchmarkMetrics struct {
@@ -477,53 +466,27 @@ func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
 	batch := make([]LogEntry, size)
 	batchUUID := uuid.New().String()
 	baseTime := time.Now()
-	traceID := GenerateTraceID()
 	for i := 0; i < size; i++ {
 		template := templateLogs[rand.Intn(len(templateLogs))]
 
-		// Fast random selection from pre-generated pools
 		jobID := templatePool.JobIDs[rand.Intn(len(templatePool.JobIDs))]
 		execID := templatePool.ExecutionIDs[rand.Intn(len(templatePool.ExecutionIDs))]
 		threadID := templatePool.ThreadIDs[rand.Intn(len(templatePool.ThreadIDs))]
 		processID := templatePool.ProcessIDs[rand.Intn(len(templatePool.ProcessIDs))]
-		podSuffix := templatePool.PodSuffixes[rand.Intn(len(templatePool.PodSuffixes))]
 		ipAddr := templatePool.IPAddresses[rand.Intn(len(templatePool.IPAddresses))]
 
-		// Fast time variation
 		logTime := baseTime.Add(time.Duration(i) * time.Millisecond)
 		timestamp := logTime.Unix()
-		istTimestamp := logTime.Format("02/01/2006, 15:04:05")
 
-		// Fast message generation - simple string operations, no regex
-		message := fastReplaceMessage(template.Message, jobID, execID, threadID, processID, ipAddr, logTime)
-		if i%4 == 0 {
-			traceID = GenerateTraceID()
+		logField := ""
+		if template.Log != "" {
+			logField = fastReplaceMessage(template.Log, jobID, execID, threadID, processID, ipAddr, logTime) + " [batch:" + batchUUID + strconv.Itoa(i) + "]"
 		}
-		// var message = ""
-		// if i%2 == 0 {
-		// 	message = NewApacheCommonLog()
-		// } else {
-		// 	message = NewApacheErrorLog()
-		// }
-
-		// Fast pod name generation
-		podName := generateFastPodName(template.PodName, podSuffix)
 
 		batch[i] = LogEntry{
-			ClusterName:   template.ClusterName,
-			ContainerName: template.ContainerName,
-			CtrlbIsource:  template.CtrlbIsource,
-			CtrlbLogLevel: template.CtrlbLogLevel,
-			Message:       message + " [batch:" + batchUUID + strconv.Itoa(i) + "]",
-			NamespaceName: template.NamespaceName,
-			PluginSource:  template.PluginSource,
-			PodName:       podName,
-			Stream:        template.Stream,
-			Timestamp:     timestamp * 1000000,
-			IstTimestamp:  istTimestamp,
-			TraceId:       traceID,
-			SpanId:        GenerateSpanID(),
-			Bytes:         gofakeit.Number(0, 30000),
+			Timestamp: timestamp * 1000000,
+			Log:       logField,
+			Filename:  template.Filename,
 		}
 	}
 
