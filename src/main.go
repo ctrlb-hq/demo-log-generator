@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,14 +30,16 @@ const (
 )
 
 var (
-	concurrency     int
-	batchSize       int
-	baseURL         string
-	logFile         string
-	orgId           string
-	streamName      string
-	targetVolumeGB  float64
-	useVolumeTarget bool
+	concurrency      int
+	batchSize        int
+	baseURL          string
+	logFile          string
+	orgId            string
+	streamName       string
+	targetVolumeGB   float64
+	useVolumeTarget  bool
+	weightConfigPath string
+	weightSelection  string
 )
 
 func init() {
@@ -48,6 +51,8 @@ func init() {
 	flag.StringVar(&streamName, "streamName", "test_stream", "Steam Name")
 	flag.Float64Var(&targetVolumeGB, "targetVolumeGB", 0, "Target volume in GB (0 = use duration-based)")
 	flag.BoolVar(&useVolumeTarget, "useVolumeTarget", false, "Use volume-based termination instead of time-based")
+	flag.StringVar(&weightConfigPath, "weightConfig", "", "Path to JSON weight config for auth log category proportions")
+	flag.StringVar(&weightSelection, "weightSelection", "quota", "With -weightConfig: quota = running mix tracks weights across all batches; random = i.i.d. weighted draws per log line")
 }
 
 type LogEntry struct {
@@ -63,6 +68,27 @@ type BenchmarkMetrics struct {
 	successfulRequests int64
 	failedRequests     int64
 	targetBytes        int64
+}
+
+type TemplateEntry struct {
+	Log      string `json:"log"`
+	Filename string `json:"filename"`
+	Category string `json:"category,omitempty"`
+}
+
+type WeightConfig struct {
+	Categories map[string]float64 `json:"categories"`
+}
+
+type WeightedLogSelector struct {
+	categories   []string
+	templates    map[string][]TemplateEntry
+	weights      []float64
+	totalWeight  float64
+	cumulWeights []float64
+	quotaCredits []float64
+	quotaMu      sync.Mutex
+	selection    string
 }
 
 // Pre-generated realistic values (initialized once)
@@ -461,13 +487,12 @@ func (c *PooledHTTPClient) Stats() (int64, int64) {
 	return c.pool.Stats()
 }
 
-// FAST log generation - minimal overhead, maximum throughput
-func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
+func generateFastRealisticBatch(selector *WeightedLogSelector, size int) []LogEntry {
 	batch := make([]LogEntry, size)
 	batchUUID := uuid.New().String()
 	baseTime := time.Now()
 	for i := 0; i < size; i++ {
-		template := templateLogs[rand.Intn(len(templateLogs))]
+		template := selector.Select()
 
 		jobID := templatePool.JobIDs[rand.Intn(len(templatePool.JobIDs))]
 		execID := templatePool.ExecutionIDs[rand.Intn(len(templatePool.ExecutionIDs))]
@@ -493,11 +518,12 @@ func generateFastRealisticBatch(templateLogs []LogEntry, size int) []LogEntry {
 	return batch
 }
 
-// Fast string replacement without regex - just replace known patterns
+var templateIPs = []string{
+	"20.197.75.253", "10.42.3.17", "203.0.113.55", "172.16.0.42", "198.51.100.23",
+}
+
 func fastReplaceMessage(msg, jobID, execID, threadID string, processID int, ipAddr string, logTime time.Time) string {
-	// Replace common patterns with simple string operations
 	if strings.Contains(msg, "jid=") {
-		// Find and replace job IDs
 		if idx := strings.Index(msg, "jid="); idx != -1 {
 			start := idx + 4
 			end := start
@@ -523,17 +549,19 @@ func fastReplaceMessage(msg, jobID, execID, threadID string, processID int, ipAd
 		}
 	}
 
-	// Replace timestamps
-	if strings.Contains(msg, "2025-03-08T") {
+	if idx := strings.Index(msg, "2025-03-08T"); idx != -1 {
 		newTime := logTime.Format("2006-01-02T15:04:05.000Z")
-		msg = strings.Replace(msg, "2025-03-08T20:57:48.591Z", newTime, 1)
-		msg = strings.Replace(msg, "2025-03-08T20:57:48.497Z", newTime, 1)
-		msg = strings.Replace(msg, "2025-03-08T20:57:48.589Z", newTime, 1)
+		zIdx := strings.Index(msg[idx:], "Z")
+		if zIdx != -1 {
+			msg = msg[:idx] + newTime + msg[idx+zIdx+1:]
+		}
 	}
 
-	// Replace IP addresses only where we know they exist
-	if strings.Contains(msg, " for ") && strings.Contains(msg, ".253 ") {
-		msg = strings.Replace(msg, "20.197.75.253", ipAddr, 1)
+	for _, tip := range templateIPs {
+		if strings.Contains(msg, tip) {
+			msg = strings.Replace(msg, tip, ipAddr, 1)
+			break
+		}
 	}
 
 	if len(msg) > 0 && msg[len(msg)-1] != ' ' {
@@ -563,18 +591,45 @@ func main() {
 	// Initialize fast template pool once
 	initTemplatePool()
 
-	templateLogs, err := readLogsFromFile(logFile)
-	if err != nil {
-		fmt.Printf("Error reading logs: %v\n", err)
-		return
+	var selector *WeightedLogSelector
+
+	if weightConfigPath != "" {
+		templates, err := readTemplatesFromFile(logFile)
+		if err != nil {
+			fmt.Printf("Error reading template logs: %v\n", err)
+			return
+		}
+		if len(templates) == 0 {
+			fmt.Println("No logs found in the file")
+			return
+		}
+
+		config, err := loadWeightConfig(weightConfigPath)
+		if err != nil {
+			fmt.Printf("Error loading weight config: %v\n", err)
+			return
+		}
+
+		selector = NewWeightedLogSelector(templates, config, weightSelection)
+		if selector == nil {
+			return
+		}
+		fmt.Printf("Loaded %d template logs with weighted selection (%s) from %s\n", len(templates), weightSelection, weightConfigPath)
+	} else {
+		templateLogs, err := readLogsFromFile(logFile)
+		if err != nil {
+			fmt.Printf("Error reading logs: %v\n", err)
+			return
+		}
+		if len(templateLogs) == 0 {
+			fmt.Println("No logs found in the file")
+			return
+		}
+
+		selector = NewUniformSelector(templateLogs)
+		fmt.Printf("Loaded %d template logs with uniform selection\n", len(templateLogs))
 	}
 
-	if len(templateLogs) == 0 {
-		fmt.Println("No logs found in the file")
-		return
-	}
-
-	fmt.Printf("Loaded %d template logs\n", len(templateLogs))
 	rand.Seed(time.Now().UnixNano())
 
 	metrics := &BenchmarkMetrics{}
@@ -615,7 +670,7 @@ func main() {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			runWorker(client, templateLogs, metrics, stopCh, endTime, workerID)
+			runWorker(client, selector, metrics, stopCh, endTime, workerID)
 		}(i)
 	}
 
@@ -624,7 +679,7 @@ func main() {
 	printMetrics(metrics, client, elapsed)
 }
 
-func runWorker(client *PooledHTTPClient, templateLogs []LogEntry, metrics *BenchmarkMetrics,
+func runWorker(client *PooledHTTPClient, selector *WeightedLogSelector, metrics *BenchmarkMetrics,
 	stopCh chan struct{}, endTime time.Time, workerID int) {
 
 	for {
@@ -645,8 +700,7 @@ func runWorker(client *PooledHTTPClient, templateLogs []LogEntry, metrics *Bench
 				}
 			}
 
-			// Use fast generation
-			batch := generateFastRealisticBatch(templateLogs, batchSize)
+			batch := generateFastRealisticBatch(selector, batchSize)
 			success, bytesProcessed := sendLogBatch(client, batch, workerID)
 
 			atomic.AddInt64(&metrics.totalRequests, 1)
@@ -668,7 +722,7 @@ func sendLogBatch(client *PooledHTTPClient, logs []LogEntry, workerID int) (bool
 		return false, 0
 	}
 
-	path := fmt.Sprintf("/%s/%s/_json", orgId, streamName)
+	path := fmt.Sprintf("/%s/%s/_json_evolving", orgId, streamName)
 	// path := "/"
 	success, bytesProcessed, err := client.Post(path, data)
 
@@ -767,6 +821,168 @@ func readLogsFromFile(filePath string) ([]LogEntry, error) {
 	}
 
 	return logs, nil
+}
+
+func readTemplatesFromFile(filePath string) ([]TemplateEntry, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+
+	var templates []TemplateEntry
+	if err := json.Unmarshal(data, &templates); err != nil {
+		return nil, fmt.Errorf("error parsing JSON: %w", err)
+	}
+
+	return templates, nil
+}
+
+func loadWeightConfig(path string) (*WeightConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading weight config: %w", err)
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("error parsing weight config: %w", err)
+	}
+
+	config := &WeightConfig{Categories: make(map[string]float64)}
+	if catData, ok := raw["categories"]; ok {
+		if err := json.Unmarshal(catData, &config.Categories); err != nil {
+			return nil, fmt.Errorf("error parsing categories: %w", err)
+		}
+	}
+
+	return config, nil
+}
+
+func NewWeightedLogSelector(templates []TemplateEntry, config *WeightConfig, selection string) *WeightedLogSelector {
+	grouped := make(map[string][]TemplateEntry)
+	for _, t := range templates {
+		cat := t.Category
+		if cat == "" {
+			cat = "default"
+		}
+		grouped[cat] = append(grouped[cat], t)
+	}
+
+	var catNames []string
+	for cat, weight := range config.Categories {
+		if weight <= 0 {
+			continue
+		}
+		if len(grouped[cat]) == 0 {
+			fmt.Printf("  [warn] category '%s' (weight %.1f) has no matching templates, skipping\n", cat, weight)
+			continue
+		}
+		catNames = append(catNames, cat)
+	}
+	sort.Strings(catNames)
+
+	if len(catNames) == 0 {
+		fmt.Println("  [error] no categories with templates and positive weight")
+		return nil
+	}
+
+	weights := make([]float64, len(catNames))
+	var totalWeight float64
+	for i, cat := range catNames {
+		weights[i] = config.Categories[cat]
+		totalWeight += weights[i]
+	}
+
+	cumul := make([]float64, len(catNames))
+	var run float64
+	for i, w := range weights {
+		run += w
+		cumul[i] = run
+	}
+
+	for cat, entries := range grouped {
+		if _, ok := config.Categories[cat]; !ok {
+			fmt.Printf("  [warn] %d templates with category '%s' have no weight in config, will not be selected\n", len(entries), cat)
+		}
+	}
+
+	mode := strings.ToLower(strings.TrimSpace(selection))
+	if mode != "quota" && mode != "random" {
+		fmt.Printf("  [warn] unknown weightSelection %q, using quota\n", selection)
+		mode = "quota"
+	}
+
+	fmt.Printf("\nWeighted log selector initialized (%d categories, %.1f total weight, mode=%s):\n", len(catNames), totalWeight, mode)
+	for i, cat := range catNames {
+		pct := (weights[i] / totalWeight) * 100
+		fmt.Printf("  %-28s %5.1f%% (%d templates)\n", cat, pct, len(grouped[cat]))
+	}
+	fmt.Println()
+
+	quotaCredits := make([]float64, len(catNames))
+	return &WeightedLogSelector{
+		categories:   catNames,
+		templates:    grouped,
+		weights:      weights,
+		totalWeight:  totalWeight,
+		cumulWeights: cumul,
+		quotaCredits: quotaCredits,
+		selection:    mode,
+	}
+}
+
+func NewUniformSelector(logs []LogEntry) *WeightedLogSelector {
+	all := make([]TemplateEntry, len(logs))
+	for i, l := range logs {
+		all[i] = TemplateEntry{Log: l.Log, Filename: l.Filename, Category: "default"}
+	}
+	return &WeightedLogSelector{
+		categories:   []string{"default"},
+		templates:    map[string][]TemplateEntry{"default": all},
+		weights:      []float64{1.0},
+		totalWeight:  1.0,
+		cumulWeights: []float64{1.0},
+		quotaCredits: []float64{0},
+		selection:    "random",
+	}
+}
+
+func (s *WeightedLogSelector) Select() TemplateEntry {
+	if len(s.categories) == 0 {
+		return TemplateEntry{}
+	}
+	if s.selection == "quota" && s.totalWeight > 0 {
+		s.quotaMu.Lock()
+		for i := range s.categories {
+			s.quotaCredits[i] += s.weights[i]
+		}
+		best := 0
+		for i := 1; i < len(s.categories); i++ {
+			if s.quotaCredits[i] > s.quotaCredits[best] {
+				best = i
+			}
+		}
+		s.quotaCredits[best] -= s.totalWeight
+		cat := s.categories[best]
+		s.quotaMu.Unlock()
+		entries := s.templates[cat]
+		return entries[rand.Intn(len(entries))]
+	}
+
+	// random (i.i.d.) weighted selection
+	r := rand.Float64() * s.totalWeight
+	lo, hi := 0, len(s.cumulWeights)-1
+	for lo < hi {
+		mid := (lo + hi) / 2
+		if s.cumulWeights[mid] < r {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	cat := s.categories[lo]
+	entries := s.templates[cat]
+	return entries[rand.Intn(len(entries))]
 }
 
 const (
