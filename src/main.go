@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -40,6 +42,7 @@ var (
 	useVolumeTarget  bool
 	weightConfigPath string
 	weightSelection  string
+	logsPerMinute    int
 )
 
 func init() {
@@ -53,6 +56,7 @@ func init() {
 	flag.BoolVar(&useVolumeTarget, "useVolumeTarget", false, "Use volume-based termination instead of time-based")
 	flag.StringVar(&weightConfigPath, "weightConfig", "", "Path to JSON weight config for auth log category proportions")
 	flag.StringVar(&weightSelection, "weightSelection", "quota", "With -weightConfig: quota = running mix tracks weights across all batches; random = i.i.d. weighted draws per log line")
+	flag.IntVar(&logsPerMinute, "logsPerMinute", 0, "Cap total log lines per minute across all workers (0 = unlimited)")
 }
 
 type LogEntry struct {
@@ -632,8 +636,22 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	if logsPerMinute < 0 {
+		fmt.Println("logsPerMinute must be >= 0")
+		return
+	}
+
+	var logRateLimiter *rate.Limiter
+	if logsPerMinute > 0 {
+		perSecond := rate.Limit(float64(logsPerMinute) / 60.0)
+		logRateLimiter = rate.NewLimiter(perSecond, batchSize)
+		fmt.Printf("Rate limit: ~%d log lines/minute across all workers (burst=%d lines)\n", logsPerMinute, batchSize)
+	}
+
 	metrics := &BenchmarkMetrics{}
 	stopCh := make(chan struct{})
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	defer workerCancel()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
@@ -641,6 +659,7 @@ func main() {
 		<-sigCh
 		fmt.Println("\nShutting down benchmark...")
 		close(stopCh)
+		workerCancel()
 	}()
 
 	maxConnections := concurrency
@@ -670,7 +689,7 @@ func main() {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			runWorker(client, selector, metrics, stopCh, endTime, workerID)
+			runWorker(workerCtx, client, selector, logRateLimiter, metrics, stopCh, endTime, workerID)
 		}(i)
 	}
 
@@ -679,12 +698,15 @@ func main() {
 	printMetrics(metrics, client, elapsed)
 }
 
-func runWorker(client *PooledHTTPClient, selector *WeightedLogSelector, metrics *BenchmarkMetrics,
+func runWorker(ctx context.Context, client *PooledHTTPClient, selector *WeightedLogSelector,
+	logRateLimiter *rate.Limiter, metrics *BenchmarkMetrics,
 	stopCh chan struct{}, endTime time.Time, workerID int) {
 
 	for {
 		select {
 		case <-stopCh:
+			return
+		case <-ctx.Done():
 			return
 		default:
 			if useVolumeTarget && targetVolumeGB > 0 {
@@ -700,6 +722,10 @@ func runWorker(client *PooledHTTPClient, selector *WeightedLogSelector, metrics 
 				}
 			}
 
+			if err := waitLogBatchQuota(ctx, logRateLimiter, batchSize); err != nil {
+				return
+			}
+
 			batch := generateFastRealisticBatch(selector, batchSize)
 			success, bytesProcessed := sendLogBatch(client, batch, workerID)
 
@@ -713,6 +739,13 @@ func runWorker(client *PooledHTTPClient, selector *WeightedLogSelector, metrics 
 			}
 		}
 	}
+}
+
+func waitLogBatchQuota(ctx context.Context, lim *rate.Limiter, n int) error {
+	if lim == nil || n <= 0 {
+		return nil
+	}
+	return lim.WaitN(ctx, n)
 }
 
 func sendLogBatch(client *PooledHTTPClient, logs []LogEntry, workerID int) (bool, int64) {
