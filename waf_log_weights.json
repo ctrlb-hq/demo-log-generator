@@ -1,0 +1,11 @@
+{
+  "_comment": "Relative weights (~100). ~75% normal allowed traffic, rest is security-relevant events.",
+  "categories": {
+    "allow_normal":       50.0,
+    "allow_api":          25.0,
+    "block_rate_limit":    8.0,
+    "block_managed_rule":  4.0,
+    "count_rule_match":    8.0,
+    "allow_bot_evaluated": 5.0
+  }
+}

@@ -20,6 +20,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	crand "crypto/rand"
+	"encoding/hex"
+
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
 )
@@ -42,6 +45,7 @@ var (
 	weightConfigPath string
 	weightSelection  string
 	logsPerMinute    int
+	logFormat        string
 )
 
 func init() {
@@ -53,9 +57,10 @@ func init() {
 	flag.StringVar(&streamName, "streamName", "test_stream", "Steam Name")
 	flag.Float64Var(&targetVolumeGB, "targetVolumeGB", 0, "Target volume in GB (0 = use duration-based)")
 	flag.BoolVar(&useVolumeTarget, "useVolumeTarget", false, "Use volume-based termination instead of time-based")
-	flag.StringVar(&weightConfigPath, "weightConfig", "", "Path to JSON weight config for auth log category proportions")
+	flag.StringVar(&weightConfigPath, "weightConfig", "", "Path to JSON weight config for category proportions")
 	flag.StringVar(&weightSelection, "weightSelection", "quota", "With -weightConfig: quota = running mix tracks weights across all batches; random = i.i.d. weighted draws per log line")
 	flag.IntVar(&logsPerMinute, "logsPerMinute", 0, "Cap total log lines per minute across all workers (0 = unlimited)")
+	flag.StringVar(&logFormat, "logFormat", "text", "Log format: text (flat log lines) or waf (AWS WAF JSON)")
 }
 
 type LogEntry struct {
@@ -92,6 +97,26 @@ type WeightConfig struct {
 type WeightedLogSelector struct {
 	categories   []string
 	templates    map[string][]TemplateEntry
+	weights      []float64
+	totalWeight  float64
+	cumulWeights []float64
+	quotaCredits []float64
+	quotaMu      sync.Mutex
+	selection    string
+}
+
+type BatchGenerator interface {
+	Generate(size int) ([]byte, error)
+}
+
+type WAFTemplate struct {
+	Category string
+	Data     map[string]interface{}
+}
+
+type WAFSelector struct {
+	categories   []string
+	templates    map[string][]WAFTemplate
 	weights      []float64
 	totalWeight  float64
 	cumulWeights []float64
@@ -597,49 +622,74 @@ func generateFastPodName(template, suffix string) string {
 func main() {
 	flag.Parse()
 
-	// Initialize fast template pool once
 	initTemplatePool()
 
-	var selector *WeightedLogSelector
+	rand.Seed(time.Now().UnixNano())
 
-	if weightConfigPath != "" {
-		templates, err := readTemplatesFromFile(logFile)
+	var generator BatchGenerator
+
+	if logFormat == "waf" {
+		if weightConfigPath == "" {
+			fmt.Println("WAF mode requires -weightConfig")
+			return
+		}
+		wafTemplates, err := readWAFTemplatesFromFile(logFile)
 		if err != nil {
-			fmt.Printf("Error reading template logs: %v\n", err)
+			fmt.Printf("Error reading WAF templates: %v\n", err)
 			return
 		}
-		if len(templates) == 0 {
-			fmt.Println("No logs found in the file")
+		if len(wafTemplates) == 0 {
+			fmt.Println("No WAF templates found in file")
 			return
 		}
-
 		config, err := loadWeightConfig(weightConfigPath)
 		if err != nil {
 			fmt.Printf("Error loading weight config: %v\n", err)
 			return
 		}
-
-		selector = NewWeightedLogSelector(templates, config, weightSelection)
-		if selector == nil {
+		wafSel := NewWAFSelector(wafTemplates, config, weightSelection)
+		if wafSel == nil {
 			return
 		}
-		fmt.Printf("Loaded %d template logs with weighted selection (%s) from %s\n", len(templates), weightSelection, weightConfigPath)
+		generator = &WAFBatchGenerator{selector: wafSel}
+		fmt.Printf("Loaded %d WAF templates with weighted selection (%s)\n", len(wafTemplates), weightSelection)
 	} else {
-		templateLogs, err := readLogsFromFile(logFile)
-		if err != nil {
-			fmt.Printf("Error reading logs: %v\n", err)
-			return
+		var selector *WeightedLogSelector
+		if weightConfigPath != "" {
+			templates, err := readTemplatesFromFile(logFile)
+			if err != nil {
+				fmt.Printf("Error reading template logs: %v\n", err)
+				return
+			}
+			if len(templates) == 0 {
+				fmt.Println("No logs found in the file")
+				return
+			}
+			config, err := loadWeightConfig(weightConfigPath)
+			if err != nil {
+				fmt.Printf("Error loading weight config: %v\n", err)
+				return
+			}
+			selector = NewWeightedLogSelector(templates, config, weightSelection)
+			if selector == nil {
+				return
+			}
+			fmt.Printf("Loaded %d template logs with weighted selection (%s) from %s\n", len(templates), weightSelection, weightConfigPath)
+		} else {
+			templateLogs, err := readLogsFromFile(logFile)
+			if err != nil {
+				fmt.Printf("Error reading logs: %v\n", err)
+				return
+			}
+			if len(templateLogs) == 0 {
+				fmt.Println("No logs found in the file")
+				return
+			}
+			selector = NewUniformSelector(templateLogs)
+			fmt.Printf("Loaded %d template logs with uniform selection\n", len(templateLogs))
 		}
-		if len(templateLogs) == 0 {
-			fmt.Println("No logs found in the file")
-			return
-		}
-
-		selector = NewUniformSelector(templateLogs)
-		fmt.Printf("Loaded %d template logs with uniform selection\n", len(templateLogs))
+		generator = &TextBatchGenerator{selector: selector}
 	}
-
-	rand.Seed(time.Now().UnixNano())
 
 	if batchSize <= 0 {
 		fmt.Println("batchSize must be > 0")
@@ -706,7 +756,7 @@ func main() {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			runWorker(workerCtx, client, selector, logRateLimiter, metrics, stopCh, endTime, workerID)
+			runWorker(workerCtx, client, generator, logRateLimiter, metrics, stopCh, endTime, workerID)
 		}(i)
 	}
 
@@ -715,7 +765,7 @@ func main() {
 	printMetrics(metrics, client, elapsed)
 }
 
-func runWorker(ctx context.Context, client *PooledHTTPClient, selector *WeightedLogSelector,
+func runWorker(ctx context.Context, client *PooledHTTPClient, generator BatchGenerator,
 	logRateLimiter *BatchRateLimiter, metrics *BenchmarkMetrics,
 	stopCh chan struct{}, endTime time.Time, workerID int) {
 
@@ -743,8 +793,14 @@ func runWorker(ctx context.Context, client *PooledHTTPClient, selector *Weighted
 				return
 			}
 
-			batch := generateFastRealisticBatch(selector, batchSize)
-			success, bytesProcessed := sendLogBatch(client, batch, workerID)
+			data, err := generator.Generate(batchSize)
+			if err != nil {
+				fmt.Printf("Worker %d: Generate error: %v\n", workerID, err)
+				continue
+			}
+			//print the data
+			fmt.Printf("Worker %d: Data: %s\n", workerID, string(data))
+			success, bytesProcessed := sendBatchData(client, data, workerID)
 
 			atomic.AddInt64(&metrics.totalRequests, 1)
 			if success {
@@ -802,27 +858,300 @@ func (l *BatchRateLimiter) Wait(ctx context.Context) error {
 	}
 }
 
-func sendLogBatch(client *PooledHTTPClient, logs []LogEntry, workerID int) (bool, int64) {
-	data, err := json.Marshal(logs)
+// --- WAF log generation ---
+
+var wafCountries = []struct {
+	code   string
+	region string
+	weight float64
+}{
+	{"IN", "KA", 50}, {"IN", "MH", 20}, {"IN", "DL", 10},
+	{"US", "VA", 8}, {"SG", "SG", 5}, {"AE", "DU", 4}, {"GB", "LND", 3},
+}
+
+var wafASNs = []string{
+	"AS9829", "AS55836", "AS24560", "AS45609", "AS18209",
+	"AS16509", "AS14618", "AS13335", "AS15169", "AS20473",
+}
+
+var wafUserAgents = []string{
+	"okhttp/4.12.0", "okhttp/4.11.0",
+	"Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+	"Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+}
+
+var wafAppVersions = []string{"26.4.7", "26.4.6", "26.3.5", "26.3.4", "26.2.1"}
+
+func readWAFTemplatesFromFile(path string) ([]WAFTemplate, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Printf("Worker %d: Unable to marshal payload: %v\n", workerID, err)
-		return false, 0
+		return nil, fmt.Errorf("error reading WAF template file: %w", err)
 	}
 
-	path := fmt.Sprintf("/%s/%s/_json_evolving", orgId, streamName)
-	// path := "/"
-	success, bytesProcessed, err := client.Post(path, data)
+	var raw []map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("error parsing WAF template JSON: %w", err)
+	}
 
+	templates := make([]WAFTemplate, 0, len(raw))
+	for _, obj := range raw {
+		cat, _ := obj["_category"].(string)
+		if cat == "" {
+			cat = "default"
+		}
+		delete(obj, "_category")
+		templates = append(templates, WAFTemplate{Category: cat, Data: obj})
+	}
+	return templates, nil
+}
+
+func NewWAFSelector(templates []WAFTemplate, config *WeightConfig, selection string) *WAFSelector {
+	grouped := make(map[string][]WAFTemplate)
+	for _, t := range templates {
+		grouped[t.Category] = append(grouped[t.Category], t)
+	}
+
+	var catNames []string
+	for cat, weight := range config.Categories {
+		if weight <= 0 {
+			continue
+		}
+		if len(grouped[cat]) == 0 {
+			fmt.Printf("  [warn] category '%s' (weight %.1f) has no matching WAF templates, skipping\n", cat, weight)
+			continue
+		}
+		catNames = append(catNames, cat)
+	}
+	sort.Strings(catNames)
+
+	if len(catNames) == 0 {
+		fmt.Println("  [error] no WAF categories with templates and positive weight")
+		return nil
+	}
+
+	weights := make([]float64, len(catNames))
+	var totalWeight float64
+	for i, cat := range catNames {
+		weights[i] = config.Categories[cat]
+		totalWeight += weights[i]
+	}
+
+	cumul := make([]float64, len(catNames))
+	var run float64
+	for i, w := range weights {
+		run += w
+		cumul[i] = run
+	}
+
+	for cat, entries := range grouped {
+		if _, ok := config.Categories[cat]; !ok {
+			fmt.Printf("  [warn] %d WAF templates with category '%s' have no weight in config\n", len(entries), cat)
+		}
+	}
+
+	mode := strings.ToLower(strings.TrimSpace(selection))
+	if mode != "quota" && mode != "random" {
+		mode = "quota"
+	}
+
+	fmt.Printf("\nWAF log selector initialized (%d categories, %.1f total weight, mode=%s):\n", len(catNames), totalWeight, mode)
+	for i, cat := range catNames {
+		pct := (weights[i] / totalWeight) * 100
+		fmt.Printf("  %-28s %5.1f%% (%d templates)\n", cat, pct, len(grouped[cat]))
+	}
+	fmt.Println()
+
+	return &WAFSelector{
+		categories:   catNames,
+		templates:    grouped,
+		weights:      weights,
+		totalWeight:  totalWeight,
+		cumulWeights: cumul,
+		quotaCredits: make([]float64, len(catNames)),
+		selection:    mode,
+	}
+}
+
+func (s *WAFSelector) Select() WAFTemplate {
+	if len(s.categories) == 0 {
+		return WAFTemplate{}
+	}
+	if s.selection == "quota" && s.totalWeight > 0 {
+		s.quotaMu.Lock()
+		for i := range s.categories {
+			s.quotaCredits[i] += s.weights[i]
+		}
+		best := 0
+		for i := 1; i < len(s.categories); i++ {
+			if s.quotaCredits[i] > s.quotaCredits[best] {
+				best = i
+			}
+		}
+		s.quotaCredits[best] -= s.totalWeight
+		cat := s.categories[best]
+		s.quotaMu.Unlock()
+		entries := s.templates[cat]
+		return entries[rand.Intn(len(entries))]
+	}
+
+	r := rand.Float64() * s.totalWeight
+	lo, hi := 0, len(s.cumulWeights)-1
+	for lo < hi {
+		mid := (lo + hi) / 2
+		if s.cumulWeights[mid] < r {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	cat := s.categories[lo]
+	entries := s.templates[cat]
+	return entries[rand.Intn(len(entries))]
+}
+
+func deepCopyMap(src map[string]interface{}) map[string]interface{} {
+	data, _ := json.Marshal(src)
+	var dst map[string]interface{}
+	json.Unmarshal(data, &dst)
+	return dst
+}
+
+func randomHex(n int) string {
+	b := make([]byte, n)
+	crand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+func pickWeightedCountry() (code, region string) {
+	var total float64
+	for _, c := range wafCountries {
+		total += c.weight
+	}
+	r := rand.Float64() * total
+	var cum float64
+	for _, c := range wafCountries {
+		cum += c.weight
+		if r <= cum {
+			return c.code, c.region
+		}
+	}
+	last := wafCountries[len(wafCountries)-1]
+	return last.code, last.region
+}
+
+func randomizeWAFEntry(entry map[string]interface{}, ts int64, ip, country, region string) {
+	entry["_timestamp"] = ts
+
+	if req, ok := entry["httpRequest"].(map[string]interface{}); ok {
+		req["clientIp"] = ip
+		req["country"] = country
+		req["requestId"] = uuid.New().String()
+
+		if headers, ok := req["headers"].([]interface{}); ok {
+			for _, h := range headers {
+				hdr, ok := h.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				name, _ := hdr["name"].(string)
+				switch name {
+				case "sessionid", "session_id":
+					hdr["value"] = uuid.New().String()
+				case "deviceuid", "device_uid":
+					hdr["value"] = uuid.New().String()
+				case "requestid", "request_id":
+					hdr["value"] = uuid.New().String()
+				case "authorization":
+					hdr["value"] = "Bearer eyJ" + randomHex(32) + "." + randomHex(48) + "." + randomHex(24)
+				case "user-agent":
+					hdr["value"] = wafUserAgents[rand.Intn(len(wafUserAgents))]
+				case "app_version", "appversion":
+					hdr["value"] = wafAppVersions[rand.Intn(len(wafAppVersions))]
+				case "store_id", "storeid":
+					hdr["value"] = fmt.Sprintf("%d", rand.Intn(9000)+1000)
+				case "advertiser_id":
+					hdr["value"] = uuid.New().String()
+				case "sentry-trace":
+					hdr["value"] = randomHex(16) + "-" + randomHex(8) + "-1"
+				}
+			}
+		}
+	}
+
+	entry["ja3Fingerprint"] = randomHex(16)
+	entry["ja4Fingerprint"] = "t13d1516h2_" + randomHex(6) + "_" + randomHex(6)
+	entry["clientAsn"] = wafASNs[rand.Intn(len(wafASNs))]
+
+	geoLabels := []interface{}{
+		map[string]interface{}{"name": "awswaf:clientip:geo:country:" + country},
+		map[string]interface{}{"name": "awswaf:clientip:geo:region:" + region},
+	}
+	entry["labels"] = geoLabels
+
+	if rateRules, ok := entry["rateBasedRuleList"].([]interface{}); ok {
+		for _, rr := range rateRules {
+			rule, ok := rr.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if _, hasLimit := rule["limitValue"]; hasLimit {
+				rule["limitValue"] = ip
+			}
+			if customs, ok := rule["customValues"].([]interface{}); ok {
+				for _, cv := range customs {
+					if cval, ok := cv.(map[string]interface{}); ok {
+						cval["value"] = randomHex(12)
+					}
+				}
+			}
+		}
+	}
+}
+
+type WAFBatchGenerator struct {
+	selector *WAFSelector
+}
+
+func (g *WAFBatchGenerator) Generate(size int) ([]byte, error) {
+	batch := make([]map[string]interface{}, size)
+	baseTime := time.Now()
+	for i := 0; i < size; i++ {
+		tmpl := g.selector.Select()
+		entry := deepCopyMap(tmpl.Data)
+
+		logTime := baseTime.Add(time.Duration(i) * time.Millisecond)
+		tsMicros := logTime.UnixMicro()
+		ip := templatePool.IPAddresses[rand.Intn(len(templatePool.IPAddresses))]
+		country, region := pickWeightedCountry()
+
+		randomizeWAFEntry(entry, tsMicros, ip, country, region)
+		batch[i] = entry
+	}
+	return json.Marshal(batch)
+}
+
+type TextBatchGenerator struct {
+	selector *WeightedLogSelector
+}
+
+func (g *TextBatchGenerator) Generate(size int) ([]byte, error) {
+	batch := generateFastRealisticBatch(g.selector, size)
+	return json.Marshal(batch)
+}
+
+func sendBatchData(client *PooledHTTPClient, data []byte, workerID int) (bool, int64) {
+	path := fmt.Sprintf("/%s/%s/_json_evolving", orgId, streamName)
+	success, bytesProcessed, err := client.Post(path, data)
 	if err != nil {
 		fmt.Printf("Worker %d: Error sending request: %v\n", workerID, err)
 		return false, bytesProcessed
 	}
-
 	if !success {
 		fmt.Printf("Worker %d: Non-OK HTTP status\n", workerID)
 		return false, bytesProcessed
 	}
-
 	return true, bytesProcessed
 }
 

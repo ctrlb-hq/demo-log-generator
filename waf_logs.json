@@ -1,0 +1,1403 @@
+[
+  {
+    "_category": "allow_normal",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "compatible_components", "value": "EXTERNAL_COUPONS,BUNDLE,MULTI_SELLER_ENABLED,ROLLUPS,HOMEPAGE_V2,DYNAMIC_FILTERS,CART_PERSISTENCE,PHARMA_ENABLED,SEARCH_FILTERS_V1,HYPER_UPI" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" },
+        { "name": "content-type", "value": "application/json; charset=utf-8" }
+      ],
+      "uri": "/lms/api/v2/get_page",
+      "args": "latitude=12.97&longitude=77.59&product_variant_id=12345&store_id=4521&page_type=PDP&version=v2&page_size=7",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS9829"
+  },
+  {
+    "_category": "allow_normal",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/bf87c216283adf07279a74491f5cef73_RL-authorized",
+        "rateBasedRuleName": "RL-authorized",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 1000,
+        "evaluationWindowSec": 120,
+        "customValues": [
+          { "key": "HEADER", "name": "authorization", "value": "placeholder-auth" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "appversion", "value": "26.4.7" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "storeid", "value": "4521" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" },
+        { "name": "compatible_components", "value": "EXTERNAL_COUPONS,BUNDLE,MULTI_SELLER_ENABLED,ROLLUPS,HOMEPAGE_V2,DYNAMIC_FILTERS,CART_PERSISTENCE,PHARMA_ENABLED,SEARCH_FILTERS_V1" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" },
+        { "name": "content-type", "value": "application/json; charset=utf-8" },
+        { "name": "content-length", "value": "2868" }
+      ],
+      "uri": "/cfs/api/v1/bulk-widget-data",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "POST",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:MH" }
+    ],
+    "requestBodySize": 2868,
+    "requestBodySizeInspectedByWAF": 2868,
+    "clientAsn": "AS55836"
+  },
+  {
+    "_category": "allow_normal",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+        { "name": "sec-ch-ua", "value": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"" },
+        { "name": "sec-ch-ua-mobile", "value": "?0" },
+        { "name": "sec-ch-ua-platform", "value": "\"macOS\"" },
+        { "name": "sec-fetch-site", "value": "same-origin" },
+        { "name": "sec-fetch-mode", "value": "navigate" },
+        { "name": "sec-fetch-dest", "value": "document" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
+        { "name": "accept-encoding", "value": "gzip, deflate, br" },
+        { "name": "accept-language", "value": "en-US,en;q=0.9" }
+      ],
+      "uri": "/api/v1/home",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:DL" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS24560"
+  },
+  {
+    "_category": "allow_normal",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "ios" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "3201" },
+        { "name": "compatible_components", "value": "EXTERNAL_COUPONS,BUNDLE,MULTI_SELLER_ENABLED,ROLLUPS,HOMEPAGE_V2,DYNAMIC_FILTERS,HYPER_UPI_IOS,CART_PERSISTENCE" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
+        { "name": "accept-encoding", "value": "gzip" }
+      ],
+      "uri": "/api/v1/categories",
+      "args": "store_id=3201&version=v2",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS45609"
+  },
+  {
+    "_category": "allow_normal",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_7c8545f1/7c8545f1-c46b-4c17-9b6e-7f3e557bc2dd",
+        "rateBasedRuleName": "RL-lms_pdp_query_body",
+        "limitKey": "IP",
+        "maxRateAllowed": 50,
+        "evaluationWindowSec": 60,
+        "limitValue": "42.108.100.50"
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "5678" },
+        { "name": "storeid", "value": "5678" },
+        { "name": "compatible_components", "value": "EXTERNAL_COUPONS,BUNDLE,MULTI_SELLER_ENABLED,ROLLUPS,HOMEPAGE_V2,CART_PERSISTENCE,SEARCH_FILTERS_V1" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" }
+      ],
+      "uri": "/api/v1/store/products",
+      "args": "store_id=5678&page=1&page_size=20&category_id=101",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS9829"
+  },
+  {
+    "_category": "allow_api",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/bf87c216283adf07279a74491f5cef73_RL-authorized",
+        "rateBasedRuleName": "RL-authorized",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 1000,
+        "evaluationWindowSec": 120,
+        "customValues": [
+          { "key": "HEADER", "name": "authorization", "value": "placeholder-auth" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/f32a4471c57ed024bb36cb2f78f51bd7_RL_lms_device_uid",
+        "rateBasedRuleName": "RL_lms_device_uid",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 150,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "device_uid", "value": "placeholder-device-uid" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "appversion", "value": "26.4.7" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "storeid", "value": "4521" },
+        { "name": "compatible_components", "value": "EXTERNAL_COUPONS,BUNDLE,MULTI_SELLER_ENABLED,ROLLUPS,HOMEPAGE_V2,DYNAMIC_FILTERS,CART_PERSISTENCE" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" },
+        { "name": "content-type", "value": "application/json; charset=utf-8" },
+        { "name": "content-length", "value": "156" }
+      ],
+      "uri": "/api/v1/cart/add",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "POST",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 156,
+    "requestBodySizeInspectedByWAF": 156,
+    "clientAsn": "AS9829"
+  },
+  {
+    "_category": "allow_api",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/bf87c216283adf07279a74491f5cef73_RL-authorized",
+        "rateBasedRuleName": "RL-authorized",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 1000,
+        "evaluationWindowSec": 120,
+        "customValues": [
+          { "key": "HEADER", "name": "authorization", "value": "placeholder-auth" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/c4c74e1cdcd7aba4c336d65f828ab228_lms-RL-200-unauth-based-on-session-id",
+        "rateBasedRuleName": "lms-RL-200-unauth-based-on-session-id",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 200,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "sessionid", "value": "placeholder-session-id" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/62e5894ff0dff0228a76f085c8844502_lms-RL-50-unauth-based-on-requestid",
+        "rateBasedRuleName": "lms-RL-50-unauth-based-on-requestid",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 50,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "requestid", "value": "placeholder-request-id" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "appversion", "value": "26.4.7" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "compatible_components", "value": "EXTERNAL_COUPONS,BUNDLE,MULTI_SELLER_ENABLED,ROLLUPS,HOMEPAGE_V2,DYNAMIC_FILTERS,CART_PERSISTENCE" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" },
+        { "name": "content-type", "value": "application/json; charset=utf-8" },
+        { "name": "content-length", "value": "1420" }
+      ],
+      "uri": "/api/v1/orders/create",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "POST",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:MH" }
+    ],
+    "requestBodySize": 1420,
+    "requestBodySizeInspectedByWAF": 1420,
+    "clientAsn": "AS55836"
+  },
+  {
+    "_category": "allow_api",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/bf87c216283adf07279a74491f5cef73_RL-authorized",
+        "rateBasedRuleName": "RL-authorized",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 1000,
+        "evaluationWindowSec": 120,
+        "customValues": [
+          { "key": "HEADER", "name": "authorization", "value": "placeholder-auth" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/f32a4471c57ed024bb36cb2f78f51bd7_RL_lms_device_uid",
+        "rateBasedRuleName": "RL_lms_device_uid",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 150,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "device_uid", "value": "placeholder-device-uid" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "ios" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "2100" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148" },
+        { "name": "accept-encoding", "value": "gzip" }
+      ],
+      "uri": "/api/v1/user/profile",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS9829"
+  },
+  {
+    "_category": "allow_api",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/bf87c216283adf07279a74491f5cef73_RL-authorized",
+        "rateBasedRuleName": "RL-authorized",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 1000,
+        "evaluationWindowSec": 120,
+        "customValues": [
+          { "key": "HEADER", "name": "authorization", "value": "placeholder-auth" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/c4c74e1cdcd7aba4c336d65f828ab228_lms-RL-200-unauth-based-on-session-id",
+        "rateBasedRuleName": "lms-RL-200-unauth-based-on-session-id",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 200,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "sessionid", "value": "placeholder-session-id" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/62e5894ff0dff0228a76f085c8844502_lms-RL-50-unauth-based-on-requestid",
+        "rateBasedRuleName": "lms-RL-50-unauth-based-on-requestid",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 50,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "requestid", "value": "placeholder-request-id" }
+        ]
+      },
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/62e5894ff0dff0228a76f085c8844502_lms-RL-60-unauth-based-on-requestid",
+        "rateBasedRuleName": "lms-RL-60-unauth-based-on-requestid",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 60,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "requestid", "value": "placeholder-request-id" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "sec-ch-ua", "value": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"" },
+        { "name": "sec-ch-ua-mobile", "value": "?0" },
+        { "name": "sec-ch-ua-platform", "value": "\"macOS\"" },
+        { "name": "sec-fetch-site", "value": "same-origin" },
+        { "name": "sec-fetch-mode", "value": "cors" },
+        { "name": "sec-fetch-dest", "value": "empty" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "3300" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
+        { "name": "accept-encoding", "value": "gzip, deflate, br" },
+        { "name": "content-type", "value": "application/json" },
+        { "name": "content-length", "value": "89" }
+      ],
+      "uri": "/api/v1/search",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "POST",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:DL" }
+    ],
+    "requestBodySize": 89,
+    "requestBodySizeInspectedByWAF": 89,
+    "clientAsn": "AS24560"
+  },
+  {
+    "_category": "block_rate_limit",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "RL-1K",
+    "terminatingRuleType": "RATE_BASED",
+    "action": "BLOCK",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": 403,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" }
+      ],
+      "uri": "/lms/api/v2/get_page",
+      "args": "latitude=12.97&longitude=77.59&page_type=PDP&version=v2",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS9829"
+  },
+  {
+    "_category": "block_rate_limit",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "RL-authorized",
+    "terminatingRuleType": "RATE_BASED",
+    "action": "BLOCK",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/bf87c216283adf07279a74491f5cef73_RL-authorized",
+        "rateBasedRuleName": "RL-authorized",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 1000,
+        "evaluationWindowSec": 120,
+        "customValues": [
+          { "key": "HEADER", "name": "authorization", "value": "placeholder-auth" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": 403,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "appversion", "value": "26.4.7" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" },
+        { "name": "content-type", "value": "application/json; charset=utf-8" },
+        { "name": "content-length", "value": "512" }
+      ],
+      "uri": "/api/v1/cart/add",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "POST",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:MH" }
+    ],
+    "requestBodySize": 512,
+    "requestBodySizeInspectedByWAF": 512,
+    "clientAsn": "AS55836"
+  },
+  {
+    "_category": "block_rate_limit",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "RL_lms_device_uid",
+    "terminatingRuleType": "RATE_BASED",
+    "action": "BLOCK",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "wafv2:us-east-1:123456789012:global/ARBR/123456789012_ARBR/f32a4471c57ed024bb36cb2f78f51bd7_RL_lms_device_uid",
+        "rateBasedRuleName": "RL_lms_device_uid",
+        "limitKey": "CUSTOMKEYS",
+        "maxRateAllowed": 150,
+        "evaluationWindowSec": 60,
+        "customValues": [
+          { "key": "HEADER", "name": "device_uid", "value": "placeholder-device-uid" }
+        ]
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": 403,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" }
+      ],
+      "uri": "/lms/api/v2/get_page",
+      "args": "latitude=19.07&longitude=72.87&page_type=PDP&version=v2",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:MH" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS55836"
+  },
+  {
+    "_category": "block_managed_rule",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "AWS-AWSManagedRulesCommonRuleSet",
+    "terminatingRuleType": "MANAGED_RULE_GROUP",
+    "action": "BLOCK",
+    "terminatingRuleMatchDetails": [
+      {
+        "conditionType": "SQL_INJECTION",
+        "location": "BODY",
+        "matchedData": ["1", "OR", "1=1"]
+      }
+    ],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      },
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/AWS-AWSManagedRulesCommonRuleSet/abcd1234-5678-90ab-cdef-1234567890ab",
+        "terminatingRule": {
+          "ruleId": "SQLi_BODY",
+          "action": "BLOCK",
+          "ruleMatchDetails": null
+        },
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": 403,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
+        { "name": "content-type", "value": "application/x-www-form-urlencoded" },
+        { "name": "accept-encoding", "value": "gzip, deflate, br" },
+        { "name": "content-length", "value": "42" }
+      ],
+      "uri": "/api/v1/search",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "POST",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:DL" }
+    ],
+    "requestBodySize": 42,
+    "requestBodySizeInspectedByWAF": 42,
+    "clientAsn": "AS24560"
+  },
+  {
+    "_category": "block_managed_rule",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "AWS-AWSManagedRulesKnownBadInputsRuleSet",
+    "terminatingRuleType": "MANAGED_RULE_GROUP",
+    "action": "BLOCK",
+    "terminatingRuleMatchDetails": [
+      {
+        "conditionType": "XSS",
+        "location": "QUERY_STRING",
+        "matchedData": ["<script>"]
+      }
+    ],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      },
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/AWS-AWSManagedRulesKnownBadInputsRuleSet/efgh5678-1234-abcd-ef01-234567890abc",
+        "terminatingRule": {
+          "ruleId": "CrossSiteScripting_QUERYSTRING",
+          "action": "BLOCK",
+          "ruleMatchDetails": null
+        },
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": 403,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
+        { "name": "accept-encoding", "value": "gzip, deflate, br" }
+      ],
+      "uri": "/api/v1/products",
+      "args": "q=<script>alert(1)</script>",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:US" },
+      { "name": "awswaf:clientip:geo:region:VA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS16509"
+  },
+  {
+    "_category": "count_rule_match",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_23c1babf/23c1babf-5e4d-41ff-b6be-e3ac2971ee3f",
+        "rateBasedRuleName": "RL_lms_pdp_unauth",
+        "limitKey": "IP",
+        "maxRateAllowed": 20,
+        "evaluationWindowSec": 60,
+        "limitValue": "42.108.100.50"
+      }
+    ],
+    "nonTerminatingMatchingRules": [
+      {
+        "ruleId": "lms_pdp_unauth_query_body",
+        "action": "COUNT",
+        "ruleMatchDetails": [
+          {
+            "conditionType": "REGEX",
+            "location": "HEADER",
+            "matchedData": null,
+            "matchedFieldName": ""
+          },
+          {
+            "conditionType": "REGEX",
+            "location": "HEADER",
+            "matchedData": null,
+            "matchedFieldName": ""
+          }
+        ]
+      }
+    ],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "IN",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "platform", "value": "android" },
+        { "name": "sessionid", "value": "placeholder-session-id" },
+        { "name": "session_id", "value": "placeholder-session-id" },
+        { "name": "deviceuid", "value": "placeholder-device-uid" },
+        { "name": "device_uid", "value": "placeholder-device-uid" },
+        { "name": "requestid", "value": "placeholder-request-id" },
+        { "name": "request_id", "value": "placeholder-request-id" },
+        { "name": "app_version", "value": "26.4.7" },
+        { "name": "tenant", "value": "CTRLB" },
+        { "name": "store_id", "value": "4521" },
+        { "name": "user-agent", "value": "okhttp/4.12.0" },
+        { "name": "accept-encoding", "value": "gzip" }
+      ],
+      "uri": "/lms/api/v2/get_page",
+      "args": "latitude=12.97&longitude=77.59&product_variant_id=99887&store_id=4521&page_type=PDP&version=v2&page_size=7",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:IN" },
+      { "name": "awswaf:clientip:geo:region:KA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS9829"
+  },
+  {
+    "_category": "count_rule_match",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [
+      {
+        "ruleId": "geo_block_non_IN",
+        "action": "COUNT",
+        "ruleMatchDetails": [
+          {
+            "conditionType": "GEO",
+            "location": "HEADER",
+            "matchedData": null,
+            "matchedFieldName": ""
+          }
+        ]
+      }
+    ],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "US",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+        { "name": "sec-ch-ua", "value": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"" },
+        { "name": "sec-ch-ua-mobile", "value": "?0" },
+        { "name": "sec-ch-ua-platform", "value": "\"Windows\"" },
+        { "name": "sec-fetch-site", "value": "none" },
+        { "name": "sec-fetch-mode", "value": "navigate" },
+        { "name": "sec-fetch-dest", "value": "document" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
+        { "name": "accept-encoding", "value": "gzip, deflate, br" },
+        { "name": "accept-language", "value": "en-US,en;q=0.9" }
+      ],
+      "uri": "/api/v1/home",
+      "args": "",
+      "httpVersion": "HTTP/2.0",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:US" },
+      { "name": "awswaf:clientip:geo:region:VA" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS16509"
+  },
+  {
+    "_category": "allow_bot_evaluated",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      },
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/AWS-AWSManagedRulesBotControlRuleSet/bcde2345-6789-0abc-def1-234567890bcd",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [
+          {
+            "ruleId": "CategoryVerifiedSearchEngine",
+            "action": "COUNT",
+            "ruleMatchDetails": []
+          }
+        ],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "US",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+        { "name": "user-agent", "value": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+        { "name": "accept-encoding", "value": "gzip, deflate" },
+        { "name": "accept-language", "value": "en" }
+      ],
+      "uri": "/api/v1/products",
+      "args": "category=electronics&page=1",
+      "httpVersion": "HTTP/1.1",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:US" },
+      { "name": "awswaf:clientip:geo:region:CA" },
+      { "name": "awswaf:managed:aws:bot-control:bot:verified" },
+      { "name": "awswaf:managed:aws:bot-control:bot:category:search_engine" },
+      { "name": "awswaf:managed:aws:bot-control:bot:name:googlebot" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS15169"
+  },
+  {
+    "_category": "allow_bot_evaluated",
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/ctrlb-prod-waf/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "CF",
+    "httpSourceId": "E3KLV83R03OSIY",
+    "ruleGroupList": [
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/ShieldMitigationRuleGroup_123456789012_a1b2c3d4_e5f6/7d1b13b8-ce1f-4222-8148-9aa285839f4c",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [],
+        "excludedRules": null,
+        "customerConfig": null
+      },
+      {
+        "ruleGroupId": "arn:aws:wafv2:us-east-1:123456789012:global/rulegroup/AWS-AWSManagedRulesBotControlRuleSet/bcde2345-6789-0abc-def1-234567890bcd",
+        "terminatingRule": null,
+        "nonTerminatingMatchingRules": [
+          {
+            "ruleId": "SignalNonBrowserUserAgent",
+            "action": "COUNT",
+            "ruleMatchDetails": []
+          }
+        ],
+        "excludedRules": null,
+        "customerConfig": null
+      }
+    ],
+    "rateBasedRuleList": [
+      {
+        "rateBasedRuleId": "arn:aws:wafv2:us-east-1:123456789012_MANAGED:global/ipset/123456789012_0626fa64/0626fa64-1de0-4568-bf32-f95abebb796d",
+        "rateBasedRuleName": "RL-1K",
+        "limitKey": "IP",
+        "maxRateAllowed": 1200,
+        "evaluationWindowSec": 300,
+        "limitValue": "42.108.100.50"
+      }
+    ],
+    "nonTerminatingMatchingRules": [],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+      "clientIp": "42.108.100.50",
+      "country": "SG",
+      "headers": [
+        { "name": "host", "value": "api-gateway.ctrlb.co.in" },
+        { "name": "accept", "value": "application/json" },
+        { "name": "user-agent", "value": "python-requests/2.31.0" },
+        { "name": "accept-encoding", "value": "gzip, deflate" },
+        { "name": "authorization", "value": "Bearer eyJplaceholder.token.signature" }
+      ],
+      "uri": "/api/v1/health",
+      "args": "",
+      "httpVersion": "HTTP/1.1",
+      "httpMethod": "GET",
+      "requestId": "req-placeholder-id",
+      "fragment": "",
+      "scheme": "https",
+      "host": "api-gateway.ctrlb.co.in"
+    },
+    "_timestamp": 1777957244928000,
+    "ja3Fingerprint": "e7d705a3286e19ea42f587b344ee6865",
+    "ja4Fingerprint": "t13d1516h2_8daaf6152771_b0da82dd1658",
+    "labels": [
+      { "name": "awswaf:clientip:geo:country:SG" },
+      { "name": "awswaf:clientip:geo:region:SG" },
+      { "name": "awswaf:managed:aws:bot-control:signal:non_browser_user_agent" }
+    ],
+    "requestBodySize": 0,
+    "requestBodySizeInspectedByWAF": 0,
+    "clientAsn": "AS16509"
+  }
+]
