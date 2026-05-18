@@ -799,7 +799,7 @@ func runWorker(ctx context.Context, client *PooledHTTPClient, generator BatchGen
 				continue
 			}
 			//print the data
-			fmt.Printf("Worker %d: Data: %s\n", workerID, string(data))
+			// fmt.Printf("Worker %d: Data: %s\n", workerID, string(data))
 			success, bytesProcessed := sendBatchData(client, data, workerID)
 
 			atomic.AddInt64(&metrics.totalRequests, 1)
