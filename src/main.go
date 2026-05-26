@@ -21,6 +21,7 @@ import (
 	"time"
 
 	crand "crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 
 	"github.com/brianvoe/gofakeit"
@@ -869,11 +870,6 @@ var wafCountries = []struct {
 	{"US", "VA", 8}, {"SG", "SG", 5}, {"AE", "DU", 4}, {"GB", "LND", 3},
 }
 
-var wafASNs = []string{
-	"AS9829", "AS55836", "AS24560", "AS45609", "AS18209",
-	"AS16509", "AS14618", "AS13335", "AS15169", "AS20473",
-}
-
 var wafUserAgents = []string{
 	"okhttp/4.12.0", "okhttp/4.11.0",
 	"Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
@@ -1041,13 +1037,36 @@ func pickWeightedCountry() (code, region string) {
 	return last.code, last.region
 }
 
-func randomizeWAFEntry(entry map[string]interface{}, ts int64, ip, country, region string) {
-	entry["_timestamp"] = ts
+// generateAWSRequestId returns a base64-style id resembling AWS CloudFront request IDs
+// (e.g. "PJX1dqcttWETHgAm2SCxHeAPwywtTd7BSO7_kUeUodGRac__7PNzUA=="): 40 random bytes
+// encoded with URL-safe base64, producing a 56-char string ending in "==".
+func generateAWSRequestId() string {
+	b := make([]byte, 40)
+	crand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
+}
 
-	if req, ok := entry["httpRequest"].(map[string]interface{}); ok {
-		req["clientIp"] = ip
+func randomizeWAFEntry(entry map[string]interface{}, logTime time.Time, ip, country, region string) {
+	// Top-level millisecond timestamp + date partitions.
+	entry["timestamp"] = logTime.UnixMilli()
+	entry["year"] = logTime.Year()
+	entry["month"] = int(logTime.Month())
+	entry["day"] = logTime.Day()
+	entry["hour"] = logTime.Hour()
+
+	// Per-request randomized identifiers (re-used across mirrored header pairs so
+	// camelCase and snake_case stay consistent within one record).
+	sessionID := strings.ReplaceAll(uuid.New().String(), "-", "")
+	deviceUID := randomHex(8) // 16 hex chars, like the sample's "f886ae0599b64f19"
+	reqHeaderID := strings.ReplaceAll(uuid.New().String(), "-", "")
+	storeID := uuid.New().String()
+	storeEta := rand.Intn(13) + 3
+	appVer := wafAppVersions[rand.Intn(len(wafAppVersions))]
+
+	if req, ok := entry["httprequest"].(map[string]interface{}); ok {
+		req["clientip"] = ip
 		req["country"] = country
-		req["requestId"] = uuid.New().String()
+		req["requestid"] = generateAWSRequestId()
 
 		if headers, ok := req["headers"].([]interface{}); ok {
 			for _, h := range headers {
@@ -1058,55 +1077,38 @@ func randomizeWAFEntry(entry map[string]interface{}, ts int64, ip, country, regi
 				name, _ := hdr["name"].(string)
 				switch name {
 				case "sessionid", "session_id":
-					hdr["value"] = uuid.New().String()
+					hdr["value"] = sessionID
 				case "deviceuid", "device_uid":
-					hdr["value"] = uuid.New().String()
+					hdr["value"] = deviceUID
 				case "requestid", "request_id":
-					hdr["value"] = uuid.New().String()
-				case "authorization":
-					hdr["value"] = "Bearer eyJ" + randomHex(32) + "." + randomHex(48) + "." + randomHex(24)
+					hdr["value"] = reqHeaderID
+				case "storeid", "store_id", "store_ids":
+					hdr["value"] = storeID
+				case "store_etas":
+					hdr["value"] = fmt.Sprintf("{\"%s\": %d}", storeID, storeEta)
 				case "user-agent":
 					hdr["value"] = wafUserAgents[rand.Intn(len(wafUserAgents))]
 				case "app_version", "appversion":
-					hdr["value"] = wafAppVersions[rand.Intn(len(wafAppVersions))]
-				case "store_id", "storeid":
-					hdr["value"] = fmt.Sprintf("%d", rand.Intn(9000)+1000)
-				case "advertiser_id":
-					hdr["value"] = uuid.New().String()
+					hdr["value"] = appVer
+				case "user_gppo":
+					hdr["value"] = strconv.Itoa(rand.Intn(5000))
+				case "authorization":
+					hdr["value"] = "Bearer eyJ" + randomHex(32) + "." + randomHex(48) + "." + randomHex(24)
 				case "sentry-trace":
 					hdr["value"] = randomHex(16) + "-" + randomHex(8) + "-1"
+					// Booleans / blanks in the sample are preserved as-is from the template
+					// (isinternaluser=false, is_new_font=true, bundle_version="").
 				}
 			}
 		}
 	}
 
-	entry["ja3Fingerprint"] = randomHex(16)
-	entry["ja4Fingerprint"] = "t13d1516h2_" + randomHex(6) + "_" + randomHex(6)
-	entry["clientAsn"] = wafASNs[rand.Intn(len(wafASNs))]
+	entry["ja3fingerprint"] = randomHex(16)
 
-	geoLabels := []interface{}{
+	// Sample label format is "awswaf:clientip:geo:region:IN-WB" + country-level label.
+	entry["labels"] = []interface{}{
+		map[string]interface{}{"name": "awswaf:clientip:geo:region:" + country + "-" + region},
 		map[string]interface{}{"name": "awswaf:clientip:geo:country:" + country},
-		map[string]interface{}{"name": "awswaf:clientip:geo:region:" + region},
-	}
-	entry["labels"] = geoLabels
-
-	if rateRules, ok := entry["rateBasedRuleList"].([]interface{}); ok {
-		for _, rr := range rateRules {
-			rule, ok := rr.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			if _, hasLimit := rule["limitValue"]; hasLimit {
-				rule["limitValue"] = ip
-			}
-			if customs, ok := rule["customValues"].([]interface{}); ok {
-				for _, cv := range customs {
-					if cval, ok := cv.(map[string]interface{}); ok {
-						cval["value"] = randomHex(12)
-					}
-				}
-			}
-		}
 	}
 }
 
@@ -1122,11 +1124,10 @@ func (g *WAFBatchGenerator) Generate(size int) ([]byte, error) {
 		entry := deepCopyMap(tmpl.Data)
 
 		logTime := baseTime.Add(time.Duration(i) * time.Millisecond)
-		tsMicros := logTime.UnixMicro()
 		ip := templatePool.IPAddresses[rand.Intn(len(templatePool.IPAddresses))]
 		country, region := pickWeightedCountry()
 
-		randomizeWAFEntry(entry, tsMicros, ip, country, region)
+		randomizeWAFEntry(entry, logTime, ip, country, region)
 		batch[i] = entry
 	}
 	return json.Marshal(batch)
@@ -1142,7 +1143,7 @@ func (g *TextBatchGenerator) Generate(size int) ([]byte, error) {
 }
 
 func sendBatchData(client *PooledHTTPClient, data []byte, workerID int) (bool, int64) {
-	path := fmt.Sprintf("/%s/%s/_json_evolving", orgId, streamName)
+	path := fmt.Sprintf("/%s/%s/_json_evolving_old", orgId, streamName)
 	success, bytesProcessed, err := client.Post(path, data)
 	if err != nil {
 		fmt.Printf("Worker %d: Error sending request: %v\n", workerID, err)
