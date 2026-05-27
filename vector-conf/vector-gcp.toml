@@ -1,0 +1,35 @@
+[sources.http_in]
+type = "http_server"
+address = "0.0.0.0:8089"
+method = "POST"
+strict_path = false
+
+[sources.http_in.decoding]
+codec = "json"
+
+[sinks.gcs_out]
+type = "gcp_cloud_storage"
+inputs = ["http_in"]
+bucket = "new-ingester"
+compression = "gzip"
+key_prefix = "waf_stream_01/%Y/%m/%d/%H/"
+filename_time_format = "%M-%S"
+filename_append_uuid = true
+
+[sinks.gcs_out.batch]
+max_bytes = 5_000_000
+timeout_secs = 10
+
+[sinks.gcs_out.encoding]
+codec = "json"
+
+[sinks.gcs_out.framing]
+method = "newline_delimited"
+
+[sinks.gcs_out.request]
+retry_attempts = 15
+retry_max_duration_secs = 60
+
+[api]
+enabled = true
+address = "0.0.0.0:8686"

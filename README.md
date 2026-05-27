@@ -115,3 +115,60 @@ Then run the load generator against it (any `orgId` / `streamName` works — Flu
 ```
 
 Same credential rules apply as above: `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are only needed for GCS; on EC2 with an IAM role they can be omitted.
+
+## Vector HTTP -> Object Storage (load-gen as source)
+
+Vector is an alternative ingest agent. Unlike the Fluent Bit setup it uses **native** GCS / S3 SDKs (not the S3 XML-compat API), which avoids the connection-reset issues seen with `out_s3` against `storage.googleapis.com` under load. Both configs expose the same HTTP input on `:8089` so the load-gen command is unchanged.
+
+### Vector -> GCS
+Config: [vector-conf/vector-gcp.toml](vector-conf/vector-gcp.toml). Uses Vector's `gcp_cloud_storage` sink. On a GCE host, credentials are picked up automatically from the VM's default service account via the metadata server — no env vars required.
+
+```
+sudo docker run --rm -it \
+  -p 8089:8089 \
+  -p 8686:8686 \
+  -v $(pwd)/vector-conf/vector-gcp.toml:/etc/vector/vector.toml:ro \
+  --name vector-gcp \
+  timberio/vector:latest-debian \
+  --config /etc/vector/vector.toml
+```
+
+If running off-GCP, mount a service-account JSON and add `credentials_path = "/etc/vector/sa.json"` (or `api_key = "..."`) under `[sinks.gcs_out.auth]`.
+
+### Vector -> S3
+Config: [vector-conf/vector-aws.toml](vector-conf/vector-aws.toml). Uses Vector's `aws_s3` sink. Credentials follow the standard AWS chain — env vars, shared credentials file, or instance/role profile.
+
+```
+sudo docker run --rm -it \
+  -e AWS_ACCESS_KEY_ID="<>" \
+  -e AWS_SECRET_ACCESS_KEY="<>" \
+  -p 8089:8089 \
+  -p 8686:8686 \
+  -v $(pwd)/vector-conf/vector-aws.toml:/etc/vector/vector.toml:ro \
+  --name vector-aws \
+  timberio/vector:latest-debian \
+  --config /etc/vector/vector.toml
+```
+
+On EC2 with an IAM role, omit the `-e AWS_*` flags. Update `bucket` and `region` in the config to match your S3 bucket.
+
+### Load generator (either sink)
+```
+./build/load-gen \
+  -logFormat=waf \
+  -logFile=templates/waf_logs.json \
+  -weightConfig=templates/waf_log_weights.json \
+  -baseURL=http://localhost:8089 \
+  -orgId=api/default \
+  -streamName=waf_stream \
+  -concurrency=6 \
+  -batchSize=1000 \
+  -logsPerMinute=100000
+```
+
+### Observability
+Vector exposes a Prometheus-style metrics endpoint on `:8686/metrics`:
+```
+curl -s http://localhost:8686/metrics | grep -E 'vector_component_(sent|received)_events_total|vector_component_errors_total'
+```
+If `sent_events_total` for the sink keeps climbing and `errors_total` stays flat, no data is being lost.
