@@ -254,7 +254,7 @@ func (c *PooledHTTPClient) Post(path string, data []byte) (bool, int64, error) {
 		return false, totalBytes, fmt.Errorf("invalid status line: %s", string(statusLine))
 	}
 
-	success := parts[1] == "200"
+	success := len(parts[1]) == 3 && parts[1][0] == '2'
 
 	contentLength := 0
 	for {
