@@ -16,8 +16,8 @@ Generate realistic AWS WAF v2 logs and send them to a ctrlb stream:
 ```
 ./build/load-gen \
   -logFormat=waf \
-  -logFile=waf_logs.json \
-  -weightConfig=waf_log_weights.json \
+  -logFile=templates/waf_logs.json \
+  -weightConfig=templates/waf_log_weights.json \
   -baseURL=http://staging.ctrlb.dev:8080 \
   -orgId=api/default \
   -streamName=waf_stream \
@@ -31,7 +31,7 @@ Send flat text-based log lines (k8s, custom formats):
 ```
 ./build/load-gen \
   -baseURL=http://10.0.0.3:8445 \
-  -logFile=prod_log_k8_logs.json \
+  -logFile=templates/prod_log_k8_logs.json \
   -concurrency=20 \
   -batchSize=100
 ```
@@ -54,7 +54,7 @@ With weighted category selection:
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-logFormat` | `text` | `text` (flat log lines) or `waf` (AWS WAF JSON) |
-| `-logFile` | `prod_log_k8_logs.json` | Path to template JSON file |
+| `-logFile` | `templates/prod_log_k8_logs.json` | Path to template JSON file |
 | `-weightConfig` | (none) | Path to category weight config (required for `waf` mode) |
 | `-weightSelection` | `quota` | `quota` (steady mix) or `random` (i.i.d. draws) |
 | `-baseURL` | `http://10.0.0.3:8445` | Target ingest endpoint |
