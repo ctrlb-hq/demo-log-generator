@@ -261,15 +261,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -567,15 +567,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -873,15 +873,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -1179,15 +1179,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -1485,15 +1485,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -1791,15 +1791,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -2097,15 +2097,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -2403,15 +2403,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -2709,15 +2709,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -3015,15 +3015,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -3324,15 +3324,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -3633,15 +3633,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -3942,15 +3942,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -4251,15 +4251,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -4572,15 +4572,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -4893,15 +4893,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -5202,15 +5202,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
@@ -5517,15 +5517,15 @@
         },
         {
           "name": "isinternaluser",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_internal_user",
-          "value": false
+          "value": "false"
         },
         {
           "name": "is_new_font",
-          "value": true
+          "value": "true"
         },
         {
           "name": "content-type",
