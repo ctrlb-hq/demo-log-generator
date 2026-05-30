@@ -26,12 +26,26 @@ Generate realistic AWS WAF v2 logs and send them to a ctrlb stream:
   -logsPerMinute=1000
 ```
 
+## K8 Log Mode
+Generate K8 logs with the same fields as ClickHouse ingest (`_timestamp`, `ist_timestamp`, `message`, `trace_id`, `span_id`, `namespace_name`, `container_name`, `pod_name`, `plugin_source`, `stream`, `bytes`) and send to a ctrlb stream:
+```
+./build/load-gen \
+  -logFormat=k8 \
+  -logFile=templates/prod_log_k8_logs.json \
+  -baseURL=http://staging.ctrlb.dev:8080 \
+  -orgId=api/default \
+  -streamName=k8_stream \
+  -concurrency=10 \
+  -batchSize=1000 \
+  -logsPerMinute=60000
+```
+
 ## Text Log Mode (default)
-Send flat text-based log lines (k8s, custom formats):
+Send flat text-based log lines (`log` + `_timestamp` fields; use templates with a `log` field, e.g. `staging_logs.json`):
 ```
 ./build/load-gen \
   -baseURL=http://10.0.0.3:8445 \
-  -logFile=templates/prod_log_k8_logs.json \
+  -logFile=templates/staging_logs.json \
   -concurrency=20 \
   -batchSize=100
 ```
@@ -53,7 +67,7 @@ With weighted category selection:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-logFormat` | `text` | `text` (flat log lines) or `waf` (AWS WAF JSON) |
+| `-logFormat` | `text` | `text` (flat log lines), `k8` (K8/Fluent Bit JSON), or `waf` (AWS WAF JSON) |
 | `-logFile` | `templates/prod_log_k8_logs.json` | Path to template JSON file |
 | `-weightConfig` | (none) | Path to category weight config (required for `waf` mode) |
 | `-weightSelection` | `quota` | `quota` (steady mix) or `random` (i.i.d. draws) |

@@ -46,7 +46,7 @@ func init() {
 	flag.StringVar(&weightConfigPath, "weightConfig", "", "Path to JSON weight config for category proportions")
 	flag.StringVar(&weightSelection, "weightSelection", "quota", "With -weightConfig: quota = running mix tracks weights across all batches; random = i.i.d. weighted draws per log line")
 	flag.IntVar(&logsPerMinute, "logsPerMinute", 0, "Cap total log lines per minute across all workers (0 = unlimited)")
-	flag.StringVar(&logFormat, "logFormat", "text", "Log format: text (flat log lines) or waf (AWS WAF JSON)")
+	flag.StringVar(&logFormat, "logFormat", "text", "Log format: text (flat log lines), k8 (K8/Fluent Bit JSON), or waf (AWS WAF JSON)")
 }
 
 type BenchmarkMetrics struct {
@@ -68,13 +68,15 @@ func main() {
 	flag.Parse()
 
 	initTemplatePool()
-
 	rand.Seed(time.Now().UnixNano())
 
 	var generator BatchGenerator
-	if logFormat == "waf" {
+	switch logFormat {
+	case "waf":
 		generator = setupWAFGenerator(logFile, weightConfigPath, weightSelection)
-	} else {
+	case "k8":
+		generator = setupK8Generator(logFile)
+	default:
 		generator = setupTextGenerator(logFile, weightConfigPath, weightSelection)
 	}
 	if generator == nil {
