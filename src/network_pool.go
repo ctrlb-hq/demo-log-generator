@@ -313,7 +313,11 @@ func (c *PooledHTTPClient) Stats() (int64, int64) {
 }
 
 func sendBatchData(client *PooledHTTPClient, data []byte, workerID int) (bool, int64) {
-	path := fmt.Sprintf("/%s/%s/_json_evolving_old", orgId, streamName)
+	endpoint := "_json_evolving_old"
+	if useNDJSON {
+		endpoint = "_ndjson_evolving"
+	}
+	path := fmt.Sprintf("/%s/%s/%s", orgId, streamName, endpoint)
 	success, bytesProcessed, err := client.Post(path, data)
 	if err != nil {
 		fmt.Printf("Worker %d: Error sending request: %v\n", workerID, err)

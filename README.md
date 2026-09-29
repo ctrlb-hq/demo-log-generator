@@ -26,6 +26,33 @@ Generate realistic AWS WAF v2 logs and send them to a ctrlb stream:
   -logsPerMinute=1000
 ```
 
+## NDJSON Mode (evolving nested structs & lists)
+
+Add `-ndjson` to any mode to send **newline-delimited JSON** (one compact object
+per line) to the lake's `_ndjson_evolving` endpoint instead of a JSON array to
+`_json_evolving_old`. Pairs naturally with `-logFormat=waf`, whose records carry a
+nested `httprequest` object and `headers`/`labels` arrays — i.e. evolving nested
+schemas with structs and lists, ingested directly as NDJSON:
+
+```
+./build/load-gen \
+  -logFormat=waf \
+  -ndjson \
+  -logFile=templates/waf_logs.json \
+  -weightConfig=templates/waf_log_weights.json \
+  -baseURL=http://staging.ctrlb.dev:8080 \
+  -orgId=api/default \
+  -streamName=waf_ndjson_stream \
+  -concurrency=2 \
+  -batchSize=50 \
+  -logsPerMinute=1000
+```
+
+The request path is `/{orgId}/{streamName}/_ndjson_evolving`; keep the `api/` prefix
+folded into `-orgId` (e.g. `-orgId=api/default`) so it resolves to the lake route
+`/api/{org}/{stream}/_ndjson_evolving`. Without `-ndjson`, behavior is unchanged
+(JSON array → `_json_evolving_old`).
+
 ## K8 Log Mode
 Generate K8 logs with the same fields as ClickHouse ingest (`_timestamp`, `ist_timestamp`, `message`, `trace_id`, `span_id`, `namespace_name`, `container_name`, `pod_name`, `plugin_source`, `stream`, `bytes`) and send to a ctrlb stream:
 ```
@@ -68,6 +95,7 @@ With weighted category selection:
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-logFormat` | `text` | `text` (flat log lines), `k8` (K8/Fluent Bit JSON), or `waf` (AWS WAF JSON) |
+| `-ndjson` | `false` | Send newline-delimited JSON to `_ndjson_evolving` instead of a JSON array to `_json_evolving_old` (works with any `-logFormat`) |
 | `-logFile` | `templates/prod_log_k8_logs.json` | Path to template JSON file |
 | `-weightConfig` | (none) | Path to category weight config (required for `waf` mode) |
 | `-weightSelection` | `quota` | `quota` (steady mix) or `random` (i.i.d. draws) |

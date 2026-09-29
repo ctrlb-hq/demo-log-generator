@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -14,6 +15,28 @@ import (
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
 )
+
+// marshalBatch encodes a generated batch for transport. By default it produces a
+// single JSON array (the shape the _json_evolving_old endpoint expects). When the
+// -ndjson flag is set (useNDJSON), it instead emits newline-delimited JSON — one
+// compact object per line — the shape the _ndjson_evolving endpoint expects.
+//
+// json.Encoder.Encode writes each value as compact single-line JSON followed by a
+// trailing '\n', which is exactly NDJSON; it also HTML-escapes identically to
+// json.Marshal, so per-record bytes match the array path.
+func marshalBatch[T any](items []T) ([]byte, error) {
+	if !useNDJSON {
+		return json.Marshal(items)
+	}
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	for i := range items {
+		if err := enc.Encode(items[i]); err != nil {
+			return nil, err
+		}
+	}
+	return buf.Bytes(), nil
+}
 
 // --- Domain types ---
 
@@ -347,7 +370,7 @@ type TextBatchGenerator struct {
 
 func (g *TextBatchGenerator) Generate(size int) ([]byte, error) {
 	batch := generateFastRealisticBatch(g.selector, size)
-	return json.Marshal(batch)
+	return marshalBatch(batch)
 }
 
 func setupTextGenerator(logFile, weightConfigPath, weightSelection string) BatchGenerator {

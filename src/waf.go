@@ -332,5 +332,5 @@ func (g *WAFBatchGenerator) Generate(size int) ([]byte, error) {
 		randomizeWAFEntry(entry, logTime, ip, country, region)
 		batch[i] = entry
 	}
-	return json.Marshal(batch)
+	return marshalBatch(batch)
 }

@@ -158,5 +158,5 @@ func (g *K8BatchGenerator) Generate(size int) ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(batch)
+	return marshalBatch(batch)
 }

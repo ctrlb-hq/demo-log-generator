@@ -32,6 +32,7 @@ var (
 	weightSelection  string
 	logsPerMinute    int
 	logFormat        string
+	useNDJSON        bool
 )
 
 func init() {
@@ -47,6 +48,7 @@ func init() {
 	flag.StringVar(&weightSelection, "weightSelection", "quota", "With -weightConfig: quota = running mix tracks weights across all batches; random = i.i.d. weighted draws per log line")
 	flag.IntVar(&logsPerMinute, "logsPerMinute", 0, "Cap total log lines per minute across all workers (0 = unlimited)")
 	flag.StringVar(&logFormat, "logFormat", "text", "Log format: text (flat log lines), k8 (K8/Fluent Bit JSON), or waf (AWS WAF JSON)")
+	flag.BoolVar(&useNDJSON, "ndjson", false, "Send each batch as newline-delimited JSON (one object per line) to the _ndjson_evolving endpoint instead of a JSON array to _json_evolving_old. Works with any -logFormat; use with -logFormat=waf to send evolving nested (struct/list) records.")
 }
 
 type BenchmarkMetrics struct {
